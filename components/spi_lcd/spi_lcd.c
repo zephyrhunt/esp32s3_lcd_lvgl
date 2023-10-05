@@ -105,7 +105,6 @@ void LCD_WriteData(uint8_t data)
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
 }
-
 void LCD_WriteData_16Bits(uint16_t data16)
 {
     uint8_t h,l;

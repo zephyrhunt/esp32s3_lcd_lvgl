@@ -11,10 +11,17 @@
  *********************/
 #include "lv_port_disp.h"
 #include "spi_lcd.h"
+#include "led_strip.h"
 #include <stdbool.h>
 
+#ifdef USE_LC
 #define MY_DISP_HOR_RES    320
 #define MY_DISP_VER_RES    240
+#else
+#define MY_DISP_HOR_RES    16
+#define MY_DISP_VER_RES    8
+#endif
+
 
 /*********************
  *      DEFINES
@@ -161,6 +168,46 @@ void disp_disable_update(void)
     disp_flush_enabled = false;
 }
 
+void LED_BGR565ToRGB(uint16_t rgb565, uint8_t *r, uint8_t *g, uint8_t *b)
+{
+    *r = (rgb565 >> 11) & 0x1f;
+    *g = (rgb565 >> 5) & 0x3f;
+    *b = rgb565 & 0x1f;
+    *r <<= 3;
+    *g <<= 2;
+    *b <<= 3;
+}
+// 获取坐标对应的LED编号
+uint16_t LED_GetXYNumber(uint16_t x, uint16_t y)
+{
+    // x < LED_WIDTH and y < LED_HEIGHT
+    y = MY_DISP_VER_RES - y - 1;
+    uint16_t num = 0;
+    if (y % 2 == 0){
+        num = y * MY_DISP_HOR_RES + x;
+    } else {
+        num = (y + 1) * MY_DISP_HOR_RES - x - 1;
+    }
+    return num;
+}
+
+led_strip_handle_t led_strip;
+void led_rmt_refresh_rectangle(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t *color)
+{
+    uint16_t i, j;
+    uint16_t k = 0;
+    uint16_t c = 0;
+    uint8_t r, g, b;
+
+    for (i = y1; i <= y2; i++) {
+        for (j = x1; j <= x2; j++) {
+            LED_BGR565ToRGB(color[c], &r, &g, &b);
+            c++;
+            k = LED_GetXYNumber(j, i);
+            led_strip_set_pixel(led_strip, k, r, g, b);
+        }
+    }
+}
 /*Flush the content of the internal buffer the specific area on the display
  *You can use DMA or any hardware acceleration to do this operation in the background but
  *'lv_disp_flush_ready()' has to be called when finished.*/
@@ -168,7 +215,11 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
 {
     if(disp_flush_enabled) {
         /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
+#ifdef USE_LCD
         LCD_Flush(area->x1, area->x2, area->y1, area->y2, (uint16_t *)color_p);
+#else
+        led_rmt_refresh_rectangle(area->x1, area->x2, area->y1, area->y2, (uint16_t *)color_p);
+#endif
     }
 
     /*IMPORTANT!!!
