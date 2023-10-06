@@ -14,13 +14,50 @@ extern "C" {
 
 #include "ui_helpers.h"
 #include "ui_events.h"
+void play_Animation( lv_obj_t *TargetObject, int delay);
 // SCREEN: ui_Screen1
 void ui_Screen1_screen_init(void);
 extern lv_obj_t *ui_Screen1;
-extern lv_obj_t *ui_Image1;
+extern lv_obj_t *ui_Image2;
+void ui_event____initial_actions0( lv_event_t * e);
 extern lv_obj_t *ui____initial_actions0;
 
-LV_IMG_DECLARE( ui_img_pixel_png);   // assets\pixel.png
+LV_IMG_DECLARE( ui_img_hutao_25_png);   // assets\hutao_25.png
+LV_IMG_DECLARE( ui_img_hutao_0_png);   // assets\hutao_0.png
+LV_IMG_DECLARE( ui_img_hutao_1_png);   // assets\hutao_1.png
+LV_IMG_DECLARE( ui_img_hutao_10_png);   // assets\hutao_10.png
+LV_IMG_DECLARE( ui_img_hutao_11_png);   // assets\hutao_11.png
+LV_IMG_DECLARE( ui_img_hutao_12_png);   // assets\hutao_12.png
+LV_IMG_DECLARE( ui_img_hutao_13_png);   // assets\hutao_13.png
+LV_IMG_DECLARE( ui_img_hutao_14_png);   // assets\hutao_14.png
+LV_IMG_DECLARE( ui_img_hutao_15_png);   // assets\hutao_15.png
+LV_IMG_DECLARE( ui_img_hutao_16_png);   // assets\hutao_16.png
+LV_IMG_DECLARE( ui_img_hutao_17_png);   // assets\hutao_17.png
+LV_IMG_DECLARE( ui_img_hutao_18_png);   // assets\hutao_18.png
+LV_IMG_DECLARE( ui_img_hutao_19_png);   // assets\hutao_19.png
+LV_IMG_DECLARE( ui_img_hutao_2_png);   // assets\hutao_2.png
+LV_IMG_DECLARE( ui_img_hutao_20_png);   // assets\hutao_20.png
+LV_IMG_DECLARE( ui_img_hutao_21_png);   // assets\hutao_21.png
+LV_IMG_DECLARE( ui_img_hutao_22_png);   // assets\hutao_22.png
+LV_IMG_DECLARE( ui_img_hutao_23_png);   // assets\hutao_23.png
+LV_IMG_DECLARE( ui_img_hutao_24_png);   // assets\hutao_24.png
+LV_IMG_DECLARE( ui_img_hutao_26_png);   // assets\hutao_26.png
+LV_IMG_DECLARE( ui_img_hutao_27_png);   // assets\hutao_27.png
+LV_IMG_DECLARE( ui_img_hutao_28_png);   // assets\hutao_28.png
+LV_IMG_DECLARE( ui_img_hutao_29_png);   // assets\hutao_29.png
+LV_IMG_DECLARE( ui_img_hutao_3_png);   // assets\hutao_3.png
+LV_IMG_DECLARE( ui_img_hutao_30_png);   // assets\hutao_30.png
+LV_IMG_DECLARE( ui_img_hutao_31_png);   // assets\hutao_31.png
+LV_IMG_DECLARE( ui_img_hutao_32_png);   // assets\hutao_32.png
+LV_IMG_DECLARE( ui_img_hutao_33_png);   // assets\hutao_33.png
+LV_IMG_DECLARE( ui_img_hutao_34_png);   // assets\hutao_34.png
+LV_IMG_DECLARE( ui_img_hutao_35_png);   // assets\hutao_35.png
+LV_IMG_DECLARE( ui_img_hutao_4_png);   // assets\hutao_4.png
+LV_IMG_DECLARE( ui_img_hutao_5_png);   // assets\hutao_5.png
+LV_IMG_DECLARE( ui_img_hutao_6_png);   // assets\hutao_6.png
+LV_IMG_DECLARE( ui_img_hutao_7_png);   // assets\hutao_7.png
+LV_IMG_DECLARE( ui_img_hutao_8_png);   // assets\hutao_8.png
+LV_IMG_DECLARE( ui_img_hutao_9_png);   // assets\hutao_9.png
 
 
 
