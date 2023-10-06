@@ -13,6 +13,7 @@
 #include "spi_lcd.h"
 #include "led_strip.h"
 #include <stdbool.h>
+#define USE_LCD
 
 #ifdef USE_LCD
 #define MY_DISP_HOR_RES    320

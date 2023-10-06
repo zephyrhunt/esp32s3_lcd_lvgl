@@ -53,15 +53,15 @@ void LCD_HALInit()
 #ifdef CONFIG_LCD_OVERCLOCK
         .clock_speed_hz=26*1000*1000,           //Clock out at 26 MHz
 #else
-        .clock_speed_hz=50*1000*1000,           //Clock out at 10 MHz
+        .clock_speed_hz=10*1000*1000,           //Clock out at 10 MHz
 #endif
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
-        .queue_size=7,                          //We want to be able to queue 7 transactions at a time
+        .queue_size=10,                          //We want to be able to queue 7 transactions at a time
         .pre_cb=lcd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    ret=spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_DISABLED);
     ESP_ERROR_CHECK(ret);
     //Attach the LCD to the SPI bus
     ret=spi_bus_add_device(LCD_HOST, &devcfg, &spi);

@@ -70,12 +70,6 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     ui_init();
-//    a_Animation(ui_Image1, 10000);
-
-    uint16_t color[128] = {0};
-    for (int i = 0; i < 128; ++i) {
-        color[i] = 0xAAAA;
-    }
 
     while (1) {
         static uint8_t press_flag = 0;
@@ -88,10 +82,10 @@ void app_main(void)
         {
             printf("Hello world!\n");
 
-            lv_event_send(ui_Button3, LV_EVENT_CLICKED, NULL);
+            lv_event_send(ui_Button1, LV_EVENT_PRESSED, NULL);
             press_flag = 1;
         } else if (gpio_get_level(0) == 1){
-//            lv_event_send(ui_Switch1, LV_EVENT_RELEASED, NULL);
+            lv_event_send(ui_Button1, LV_EVENT_RELEASED, NULL);
             press_flag = 0;
         }
 
@@ -101,16 +95,16 @@ void app_main(void)
             bar_val++;
         else
             bar_val--;
+        lv_bar_set_value(ui_Bar1, bar_val, LV_ANIM_ON);
 
         if (bar_val == 100) {
             inc_flag = 0;
         }
         if (bar_val == 0){
             inc_flag = 1;
-
         }
-        lv_tick_inc(5);
+        lv_tick_inc(10);
         lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
