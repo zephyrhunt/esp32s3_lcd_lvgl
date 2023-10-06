@@ -7,6 +7,7 @@
 #include "led_strip.h"
 #include "ui.h"
 #include "driver/gpio.h"
+#include "lv_demos.h"
 
 
 #define LED_NUMS    (LED_HEIGHT * LED_WIDTH)
@@ -38,7 +39,7 @@ void app_main(void)
     lv_init();
     LCD_Init();
     lv_port_disp_init();
-    example_lvgl_demo_ui(disp);
+//    example_lvgl_demo_ui(disp);
 
     gpio_config_t io_conf = {};
     //disable interrupt
@@ -54,22 +55,12 @@ void app_main(void)
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
-    /* LED strip initialization with the GPIO and pixels number*/
-    led_strip_config_t strip_config = {
-        .strip_gpio_num = BLINK_GPIO, // The GPIO that connected to the LED strip's data line
-        .max_leds = 16*8, // The number of LEDs in the strip,
-        .led_pixel_format = LED_PIXEL_FORMAT_GRB, // Pixel format of your LED strip
-        .led_model = LED_MODEL_WS2812, // LED strip model
-        .flags.invert_out = false, // whether to invert the output signal (useful when your hardware has a level inverter)
-    };
 
-    led_strip_rmt_config_t rmt_config = {
-        .clk_src = RMT_CLK_SRC_DEFAULT, // different clock source can lead to different power consumption
-        .resolution_hz = 10 * 1000 * 1000, // 10MHz
-        .flags.with_dma = true, // whether to enable the DMA feature
-    };
-    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-    ui_init();
+//    ui_init();
+//    lv_demo_benchmark();
+    lv_demo_music();
+//    lv_demo_benchmark();
+//    lv_demo_benchmark_set_max_speed(1);
 
     while (1) {
         static uint8_t press_flag = 0;
@@ -77,33 +68,33 @@ void app_main(void)
         static uint8_t inc_flag = 1;
         static int16_t pos_x = 0;
 
-         led_strip_refresh(led_strip);
-        if (gpio_get_level(0) == 0 && press_flag == 0)
-        {
-            printf("Hello world!\n");
-
-            lv_event_send(ui_Button1, LV_EVENT_PRESSED, NULL);
-            press_flag = 1;
-        } else if (gpio_get_level(0) == 1){
-            lv_event_send(ui_Button1, LV_EVENT_RELEASED, NULL);
-            press_flag = 0;
-        }
-
-        if (bar_val %20 == 0)pos_x--;
-        if (pos_x == -160 )pos_x = 0;
-        if (inc_flag == 1)
-            bar_val++;
-        else
-            bar_val--;
-        lv_bar_set_value(ui_Bar1, bar_val, LV_ANIM_ON);
-
-        if (bar_val == 100) {
-            inc_flag = 0;
-        }
-        if (bar_val == 0){
-            inc_flag = 1;
-        }
-        lv_tick_inc(10);
+//         led_strip_refresh(led_strip);
+//        if (gpio_get_level(0) == 0 && press_flag == 0)
+//        {
+//            printf("Hello world!\n");
+//
+//            lv_event_send(ui_Button1, LV_EVENT_PRESSED, NULL);
+//            press_flag = 1;
+//        } else if (gpio_get_level(0) == 1){
+//            lv_event_send(ui_Button1, LV_EVENT_RELEASED, NULL);
+//            press_flag = 0;
+//        }
+////
+//        if (bar_val %20 == 0)pos_x--;
+//        if (pos_x == -160 )pos_x = 0;
+//        if (inc_flag == 1)
+//            bar_val++;
+//        else
+//            bar_val--;
+////        lv_bar_set_value(ui_Bar1, bar_val, LV_ANIM_ON);
+//
+//        if (bar_val == 100) {
+//            inc_flag = 0;
+//        }
+//        if (bar_val == 0){
+//            inc_flag = 1;
+//        }
+        lv_tick_inc(20);
         lv_timer_handler();
         vTaskDelay(pdMS_TO_TICKS(5));
     }

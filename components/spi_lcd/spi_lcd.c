@@ -47,21 +47,21 @@ void LCD_HALInit()
         .sclk_io_num=PIN_NUM_CLK,
         .quadwp_io_num=-1,
         .quadhd_io_num=-1,
-        .max_transfer_sz=PARALLEL_LINES*320*2+8
+        .max_transfer_sz=153700
     };
     spi_device_interface_config_t devcfg={
 #ifdef CONFIG_LCD_OVERCLOCK
         .clock_speed_hz=26*1000*1000,           //Clock out at 26 MHz
 #else
-        .clock_speed_hz=10*1000*1000,           //Clock out at 10 MHz
+        .clock_speed_hz=60*1000*1000,           //Clock out at 10 MHz
 #endif
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
-        .queue_size=10,                          //We want to be able to queue 7 transactions at a time
+        .queue_size=7,                          //We want to be able to queue 7 transactions at a time
         .pre_cb=lcd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_DISABLED);
+    ret=spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO);
     ESP_ERROR_CHECK(ret);
     //Attach the LCD to the SPI bus
     ret=spi_bus_add_device(LCD_HOST, &devcfg, &spi);
@@ -105,6 +105,8 @@ void LCD_WriteData(uint8_t data)
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
 }
+
+
 void LCD_WriteData_16Bits(uint16_t data16)
 {
     uint8_t h,l;
@@ -117,9 +119,12 @@ void LCD_WriteData_16Bits(uint16_t data16)
     t.length=16;                 //Len is in bytes, transaction length is in bits.
     t.tx_buffer=data;               //Data
     t.user=(void*)1;                //D/C needs to be set to 1
-    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
+
+    ret=spi_device_transmit(spi, &t);  //Transmit!
+//    spi_device_transmit(spi, &t);
     assert(ret==ESP_OK);            //Should have had no issues.[2] = {h, l};
 }
+
 void LCD_WriteData_16BitsLen(const uint16_t *data16, uint16_t len)
 {
     for (int i = 0; i < len; i++){
@@ -128,7 +133,8 @@ void LCD_WriteData_16BitsLen(const uint16_t *data16, uint16_t len)
     }
 }
 
-void LCD_WriteDataLen(uint8_t* data, uint16_t len)
+
+void LCD_WriteDataLen(const uint8_t* data, uint32_t len)
 {
     esp_err_t ret;
     spi_transaction_t t;
@@ -137,7 +143,7 @@ void LCD_WriteDataLen(uint8_t* data, uint16_t len)
     t.length=len*8;                 //Len is in bytes, transaction length is in bits.
     t.tx_buffer=data;               //Data
     t.user=(void*)1;                //D/C needs to be set to 1
-    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
+    ret=spi_device_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
 }
 
@@ -176,11 +182,19 @@ void LCD_SetWindows(uint16_t xStar, uint16_t yStar,uint16_t xWidth,uint16_t yHei
 	LCD_WriteReg(0x22); //准备开始写入GRAM
 }
 
-void LCD_SendColor(uint8_t *data, uint16_t length)
+void LCD_SendColor(const uint16_t *color, size_t color_size)
 {
 
-//    LCD_WriteData_16Bits(data);
-//	LCD_SPISendWithTrans(data, length, DISP_SPI_SEND_QUEUED | DISP_SPI_SIGNAL_FLUSH, 0, 0);
+    esp_err_t ret;
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));       //Zero out the transaction
+
+    if (color_size==0) return;             //no need to send anything
+    t.length=color_size*16;                 //Len is in bytes, transaction length is in bits.
+    t.tx_buffer=color;               //Data
+    t.user=(void*)1;                //D/C needs to be set to 1
+    ret = spi_device_transmit(spi, &t);  //Transmit!
+    assert(ret==ESP_OK);            //Should have had no issues.
 }
 
 void LCD_Flush(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t * color_map)
@@ -196,7 +210,8 @@ void LCD_Flush(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t * co
 	LCD_WriteRegData(0x08, y2 >> 8);
 	LCD_WriteRegData(0x09, y2 & 0xFF); //Row End
 	LCD_WriteReg(0x22); //准备开始写入GRAM
-    LCD_WriteData_16BitsLen(color_map, (x2-x1+1)*(y2-y1+1));
+    LCD_SendColor(color_map, (x2-x1+1)*(y2-y1+1));
+//    LCD_WriteData_16BitsLen(color_map, (x2-x1+1)*(y2-y1+1));
 }
 /**
   * @brief  set the cursor position
@@ -262,10 +277,11 @@ void LCD_ColorFill(uint16_t sx,uint16_t sy, uint16_t ex, uint16_t ey, uint16_t *
   */
 void LCD_SetDirection(uint8_t direction)
 {
-    direction = LCD_RGBMODE |LCD_MV |LCD_MX;
+    direction = LCD_RGBMODE | LCD_MV | LCD_MX;
 	LCD_WriteRegData(0x16, direction);
 }
 
+uint16_t colors[7680] = {};
 /**
   * @brief  draw a line
   * @param  x1:横坐标1
@@ -277,11 +293,14 @@ void LCD_SetDirection(uint8_t direction)
   */
 void LCD_clear(uint16_t color)
 {
-    uint16_t i,j;
 	LCD_SetCusor(0,0);
-    for(i=0;i<240;i++)
-        for (j=0;j<320;j++)
-        	LCD_WriteData_16Bits(color);
+    for (int i = 0; i < 7680; ++i) {
+        colors[i] = color;
+    }
+
+    for (int k = 0; k < 10; ++k) {
+        LCD_SendColor(colors, 7680);
+    }
 }
 
 /**
@@ -373,7 +392,8 @@ void LCD_Init()
 	LCD_Delay(6);
 	LCD_WriteRegData(0x28,0x38); // GON=1, DTE=1, D[1:0]=11
 	LCD_WriteRegData(0x28,0x3C); // 16-bit/pixel
-//    LCD_clear(RED);
+    LCD_SetWindows(0, 0, 320, 240);
+    LCD_clear(BLUE);
 //    LCD_DrawPoint(10, 10, 0x00DD);
 //    LCD_DrawPoint(20, 10, 0xFFDD);
 }

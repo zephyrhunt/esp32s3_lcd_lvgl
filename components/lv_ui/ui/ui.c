@@ -15,10 +15,6 @@ lv_obj_t *ui_Screen1;
 lv_obj_t *ui_Bar1;
 lv_obj_t *ui_Button1;
 lv_obj_t *ui____initial_actions0;
-const lv_img_dsc_t *ui_imgset_1798734781[6] = {&ui_img_1294260227, &ui_img_1294261252, &ui_img_1294262277, &ui_img_1294254854, &ui_img_1294255879, &ui_img_1294256904};
-const lv_img_dsc_t *ui_imgset_1924271529[6] = {&ui_img_415547207, &ui_img_666181972, &ui_img_61900157, &ui_img_1497276386, &ui_img_1394264101, &ui_img_1818974016};
-const lv_img_dsc_t *ui_imgset_dou[1] = {&ui_img_dou2_png};
-const lv_img_dsc_t *ui_imgset_2046163424[1] = {&ui_img_813806129};
 
 ///////////////////// TEST LVGL SETTINGS ////////////////////
 #if LV_COLOR_DEPTH != 16
@@ -35,8 +31,7 @@ const lv_img_dsc_t *ui_imgset_2046163424[1] = {&ui_img_813806129};
 ///////////////////// SCREENS ////////////////////
 
 void ui_init( void )
-{LV_EVENT_GET_COMP_CHILD = lv_event_register_id();
-
+{
 lv_disp_t *dispp = lv_disp_get_default();
 lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), false, LV_FONT_DEFAULT);
 lv_disp_set_theme(dispp, theme);

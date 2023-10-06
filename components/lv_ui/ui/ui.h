@@ -13,8 +13,6 @@ extern "C" {
     #include "lvgl.h"
 
 #include "ui_helpers.h"
-#include "components/ui_comp.h"
-#include "components/ui_comp_hook.h"
 #include "ui_events.h"
 // SCREEN: ui_Screen1
 void ui_Screen1_screen_init(void);
@@ -23,24 +21,8 @@ extern lv_obj_t *ui_Bar1;
 extern lv_obj_t *ui_Button1;
 extern lv_obj_t *ui____initial_actions0;
 
-LV_IMG_DECLARE( ui_img_1294260227);   // assets\bee-0000.png
-LV_IMG_DECLARE( ui_img_1294261252);   // assets\bee-0001.png
-LV_IMG_DECLARE( ui_img_1294262277);   // assets\bee-0002.png
-LV_IMG_DECLARE( ui_img_1294254854);   // assets\bee-0003.png
-LV_IMG_DECLARE( ui_img_1294255879);   // assets\bee-0004.png
-LV_IMG_DECLARE( ui_img_1294256904);   // assets\bee-0005.png
-LV_IMG_DECLARE( ui_img_415547207);   // assets\bee2-0000.png
-LV_IMG_DECLARE( ui_img_666181972);   // assets\bee2-0001.png
-LV_IMG_DECLARE( ui_img_61900157);   // assets\bee2-0002.png
-LV_IMG_DECLARE( ui_img_1497276386);   // assets\bee2-0003.png
-LV_IMG_DECLARE( ui_img_1394264101);   // assets\bee2-0004.png
-LV_IMG_DECLARE( ui_img_1818974016);   // assets\bee2-0005.png
-LV_IMG_DECLARE( ui_img_dou2_png);   // assets\dou2.png
-LV_IMG_DECLARE( ui_img_813806129);   // assets\屏幕截图 2023-09-17 100240.png
 
-LV_FONT_DECLARE( ui_font_Font1);
-LV_FONT_DECLARE( ui_font_Font2);
-LV_FONT_DECLARE( ui_font_Font3);
+
 
 void ui_init(void);
 

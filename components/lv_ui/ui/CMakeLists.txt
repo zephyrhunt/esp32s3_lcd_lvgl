@@ -1,26 +1,6 @@
-SET(SOURCES components/ui_comp_label1.c
-    components/ui_comp_switch_light.c
-    components/ui_comp.c
-    screens/ui_Screen1.c
+SET(SOURCES screens/ui_Screen1.c
     ui.c
     components/ui_comp_hook.c
-    ui_helpers.c
-    images/ui_img_1294260227.c
-    images/ui_img_1294261252.c
-    images/ui_img_1294262277.c
-    images/ui_img_1294254854.c
-    images/ui_img_1294255879.c
-    images/ui_img_1294256904.c
-    images/ui_img_415547207.c
-    images/ui_img_666181972.c
-    images/ui_img_61900157.c
-    images/ui_img_1497276386.c
-    images/ui_img_1394264101.c
-    images/ui_img_1818974016.c
-    images/ui_img_dou2_png.c
-    images/ui_img_813806129.c
-    fonts/ui_font_Font1.c
-    fonts/ui_font_Font2.c
-    fonts/ui_font_Font3.c)
+    ui_helpers.c)
 
 add_library(ui ${SOURCES})
