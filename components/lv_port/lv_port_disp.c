@@ -14,7 +14,7 @@
 #include "led_strip.h"
 #include <stdbool.h>
 
-#ifdef USE_LC
+#ifdef USE_LCD
 #define MY_DISP_HOR_RES    320
 #define MY_DISP_VER_RES    240
 #else
@@ -192,7 +192,7 @@ uint16_t LED_GetXYNumber(uint16_t x, uint16_t y)
 }
 
 led_strip_handle_t led_strip;
-void led_rmt_refresh_rectangle(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t *color)
+void LED_Flush(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t *color)
 {
     uint16_t i, j;
     uint16_t k = 0;
@@ -218,7 +218,7 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
 #ifdef USE_LCD
         LCD_Flush(area->x1, area->x2, area->y1, area->y2, (uint16_t *)color_p);
 #else
-        led_rmt_refresh_rectangle(area->x1, area->x2, area->y1, area->y2, (uint16_t *)color_p);
+        LED_Flush(area->x1, area->x2, area->y1, area->y2, (uint16_t *) color_p);
 #endif
     }
 
@@ -227,23 +227,6 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
     lv_disp_flush_ready(disp_drv);
 }
 
-/*OPTIONAL: GPU INTERFACE*/
-
-/*If your MCU has hardware accelerator (GPU) then you can use it to fill a memory with a color*/
-//static void gpu_fill(lv_disp_drv_t * disp_drv, lv_color_t * dest_buf, lv_coord_t dest_width,
-//                    const lv_area_t * fill_area, lv_color_t color)
-//{
-//    /*It's an example code which should be done by your GPU*/
-//    int32_t x, y;
-//    dest_buf += dest_width * fill_area->y1; /*Go to the first line*/
-//
-//    for(y = fill_area->y1; y <= fill_area->y2; y++) {
-//        for(x = fill_area->x1; x <= fill_area->x2; x++) {
-//            dest_buf[x] = color;
-//        }
-//        dest_buf+=dest_width;    /*Go to the next line*/
-//    }
-//}
 
 
 #else /*Enable this file at the top*/

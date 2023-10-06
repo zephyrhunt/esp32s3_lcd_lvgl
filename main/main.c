@@ -29,7 +29,7 @@ uint16_t LED_GetXYNumber(uint16_t x, uint16_t y);
 //}
 
 
-void led_rmt_refresh_rectangle(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t *color);
+void LED_Flush(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t *color);
 extern  led_strip_handle_t led_strip;
 
 void app_main(void)
@@ -70,7 +70,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     ui_init();
-
+//    a_Animation(ui_Image1, 10000);
 
     uint16_t color[128] = {0};
     for (int i = 0; i < 128; ++i) {
@@ -78,22 +78,39 @@ void app_main(void)
     }
 
     while (1) {
-//        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, 0, 5, 5, 5));
-//        led_rmt_refresh_rectangle(5, 5, 2, 7, color);
         static uint8_t press_flag = 0;
+        static uint8_t bar_val = 0;
+        static uint8_t inc_flag = 1;
+        static int16_t pos_x = 0;
 
          led_strip_refresh(led_strip);
         if (gpio_get_level(0) == 0 && press_flag == 0)
         {
             printf("Hello world!\n");
-            lv_event_send(ui_Switch1, LV_EVENT_RELEASED, NULL);
+
+            lv_event_send(ui_Button3, LV_EVENT_CLICKED, NULL);
             press_flag = 1;
         } else if (gpio_get_level(0) == 1){
 //            lv_event_send(ui_Switch1, LV_EVENT_RELEASED, NULL);
             press_flag = 0;
         }
+
+        if (bar_val %20 == 0)pos_x--;
+        if (pos_x == -160 )pos_x = 0;
+        if (inc_flag == 1)
+            bar_val++;
+        else
+            bar_val--;
+
+        if (bar_val == 100) {
+            inc_flag = 0;
+        }
+        if (bar_val == 0){
+            inc_flag = 1;
+
+        }
         lv_tick_inc(5);
         lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

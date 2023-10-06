@@ -13,17 +13,31 @@ extern "C" {
     #include "lvgl.h"
 
 #include "ui_helpers.h"
+#include "components/ui_comp.h"
+#include "components/ui_comp_hook.h"
 #include "ui_events.h"
+void a_Animation( lv_obj_t *TargetObject, int delay);
 // SCREEN: ui_Screen1
 void ui_Screen1_screen_init(void);
 extern lv_obj_t *ui_Screen1;
-extern lv_obj_t *ui_Switch1;
+void ui_event_Image1( lv_event_t * e);
+extern lv_obj_t *ui_Image1;
+void ui_event_Button3( lv_event_t * e);
+extern lv_obj_t *ui_Button3;
 extern lv_obj_t *ui____initial_actions0;
 
+LV_IMG_DECLARE( ui_img_415547207);   // assets\bee2-0000.png
+LV_IMG_DECLARE( ui_img_666181972);   // assets\bee2-0001.png
+LV_IMG_DECLARE( ui_img_61900157);   // assets\bee2-0002.png
+LV_IMG_DECLARE( ui_img_1497276386);   // assets\bee2-0003.png
+LV_IMG_DECLARE( ui_img_1394264101);   // assets\bee2-0004.png
+LV_IMG_DECLARE( ui_img_1818974016);   // assets\bee2-0005.png
 LV_IMG_DECLARE( ui_img_dou2_png);   // assets\dou2.png
 LV_IMG_DECLARE( ui_img_813806129);   // assets\屏幕截图 2023-09-17 100240.png
 
-
+LV_FONT_DECLARE( ui_font_Font1);
+LV_FONT_DECLARE( ui_font_Font2);
+LV_FONT_DECLARE( ui_font_Font3);
 
 void ui_init(void);
 
