@@ -12,7 +12,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #define EXAMPLE_ESP_WIFI_SSID      "OnePlus Lcj"
 #define EXAMPLE_ESP_WIFI_PASS      "123456788"
 static int s_retry_num = 0;
-
+uint8_t wifi_connect_status = 0;
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
@@ -22,6 +22,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         if (s_retry_num < 20) {
             esp_wifi_connect();
             s_retry_num++;
+            wifi_connect_status = 0;
             ESP_LOGI(TAG, "retry to connect to the AP");
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
@@ -32,6 +33,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+        wifi_connect_status = 1;
     }
 }
 
@@ -98,4 +100,9 @@ void WIFI_StaInit(void)
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
+}
+
+uint8_t WiFi_GetConnectStatus()
+{
+    return wifi_connect_status;
 }

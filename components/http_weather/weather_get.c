@@ -5,6 +5,10 @@
 
 #define WEB_PATH "https://api.seniverse.com/v3/weather/daily.json?key=ScVuOBExK0jxY9pzd&location=wuhan&language=en"          // 天气获取路径
 #define TAG "weather_get"
+
+
+
+WeatherInfo_t weather_info;
 /**
  * @brief 解析天气数据（JSON）
  *
@@ -45,7 +49,13 @@ static bool parse_json_data(const char *analysis_buf) {
     ESP_LOGI(TAG, "day_one_humi is: %s", cJSON_GetObjectItem(cjson_daily_1, "humidity")->valuestring);
     ESP_LOGI(TAG, "day_one_windspeed is: %s", cJSON_GetObjectItem(cjson_daily_1, "wind_speed")->valuestring);
     ESP_LOGI(TAG, "day_one_date is: %s", cJSON_GetObjectItem(cjson_daily_1, "date")->valuestring);
+    ESP_LOGI(TAG, "day_one_weather is: %s", cJSON_GetObjectItem(cjson_daily_1, "text_day")->valuestring);
     ESP_LOGI(TAG, "day_one_name is: %s", cJSON_GetObjectItem(cjson_location, "name")->valuestring);
+
+    strcpy(weather_info.date, cJSON_GetObjectItem(cjson_daily_1, "date")->valuestring);
+    strcpy(weather_info.weather, cJSON_GetObjectItem(cjson_daily_1, "text_day")->valuestring);
+    strcpy(weather_info.temp_high, cJSON_GetObjectItem(cjson_daily_1, "high")->valuestring);
+    strcpy(weather_info.temp_low, cJSON_GetObjectItem(cjson_daily_1, "low")->valuestring);
 
     return 1;
 }

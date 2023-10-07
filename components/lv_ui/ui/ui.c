@@ -28,8 +28,8 @@ lv_obj_t *ui_ImageWifi;
 lv_obj_t *ui_LabelDate;
 lv_obj_t *ui_LabelLocation;
 lv_obj_t *ui_Weather;
-lv_obj_t *ui_TextArea1;
 lv_obj_t *ui_Image7;
+lv_obj_t *ui_LabelReport;
 
 
 // SCREEN: ui_ScreenMain1

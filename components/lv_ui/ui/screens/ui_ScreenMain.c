@@ -122,9 +122,9 @@ lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 255, LV_PART_MAIN| LV_STATE_DEFAU
 ui_LabelDate = lv_label_create(ui_ScreenMain);
 lv_obj_set_width( ui_LabelDate, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_LabelDate, LV_SIZE_CONTENT);   /// 1
-lv_obj_set_x( ui_LabelDate, -88 );
+lv_obj_set_x( ui_LabelDate, 20 );
 lv_obj_set_y( ui_LabelDate, -53 );
-lv_obj_set_align( ui_LabelDate, LV_ALIGN_CENTER );
+lv_obj_set_align( ui_LabelDate, LV_ALIGN_LEFT_MID );
 lv_label_set_text(ui_LabelDate,"Date: 2023-7-10");
 lv_obj_set_style_text_color(ui_LabelDate, lv_color_hex(0x8E8E8E), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_LabelDate, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -140,9 +140,9 @@ lv_obj_set_style_bg_grad_dir(ui_LabelDate, LV_GRAD_DIR_HOR, LV_PART_MAIN| LV_STA
 ui_LabelLocation = lv_label_create(ui_ScreenMain);
 lv_obj_set_width( ui_LabelLocation, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_LabelLocation, LV_SIZE_CONTENT);   /// 1
-lv_obj_set_x( ui_LabelLocation, -91 );
+lv_obj_set_x( ui_LabelLocation, 20 );
 lv_obj_set_y( ui_LabelLocation, -78 );
-lv_obj_set_align( ui_LabelLocation, LV_ALIGN_CENTER );
+lv_obj_set_align( ui_LabelLocation, LV_ALIGN_LEFT_MID );
 lv_label_set_text(ui_LabelLocation,"Local: WuHan");
 lv_obj_set_style_text_color(ui_LabelLocation, lv_color_hex(0x8E8E8E), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_LabelLocation, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -156,11 +156,11 @@ lv_obj_set_style_bg_grad_stop(ui_LabelLocation, 255, LV_PART_MAIN| LV_STATE_DEFA
 lv_obj_set_style_bg_grad_dir(ui_LabelLocation, LV_GRAD_DIR_HOR, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Weather = lv_label_create(ui_ScreenMain);
-lv_obj_set_width( ui_Weather, LV_SIZE_CONTENT);  /// 1
+lv_obj_set_width( ui_Weather, LV_SIZE_CONTENT);  /// 300
 lv_obj_set_height( ui_Weather, LV_SIZE_CONTENT);   /// 1
-lv_obj_set_x( ui_Weather, -90 );
+lv_obj_set_x( ui_Weather, 20 );
 lv_obj_set_y( ui_Weather, -28 );
-lv_obj_set_align( ui_Weather, LV_ALIGN_CENTER );
+lv_obj_set_align( ui_Weather, LV_ALIGN_LEFT_MID );
 lv_label_set_text(ui_Weather,"Weather: Rain");
 lv_obj_set_style_text_color(ui_Weather, lv_color_hex(0x8E8E8E), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Weather, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -173,24 +173,6 @@ lv_obj_set_style_bg_main_stop(ui_Weather, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_bg_grad_stop(ui_Weather, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_bg_grad_dir(ui_Weather, LV_GRAD_DIR_HOR, LV_PART_MAIN| LV_STATE_DEFAULT);
 
-ui_TextArea1 = lv_textarea_create(ui_ScreenMain);
-lv_obj_set_width( ui_TextArea1, 260);
-lv_obj_set_height( ui_TextArea1, 70);
-lv_obj_set_x( ui_TextArea1, -1 );
-lv_obj_set_y( ui_TextArea1, 20 );
-lv_obj_set_align( ui_TextArea1, LV_ALIGN_CENTER );
-lv_textarea_set_text(ui_TextArea1,"Report:");
-lv_textarea_set_placeholder_text(ui_TextArea1,"Placeholder...");
-lv_obj_clear_flag( ui_TextArea1, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE );    /// Flags
-lv_obj_set_style_text_font(ui_TextArea1, &lv_font_montserrat_14, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_radius(ui_TextArea1, 8, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_bg_color(ui_TextArea1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
-lv_obj_set_style_bg_opa(ui_TextArea1, 150, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_border_color(ui_TextArea1, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
-lv_obj_set_style_border_opa(ui_TextArea1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-
-
-
 ui_Image7 = lv_img_create(ui_ScreenMain);
 lv_img_set_src(ui_Image7, &ui_img_rain60_60_png);
 lv_obj_set_width( ui_Image7, LV_SIZE_CONTENT);  /// 1
@@ -200,6 +182,28 @@ lv_obj_set_y( ui_Image7, -50 );
 lv_obj_set_align( ui_Image7, LV_ALIGN_CENTER );
 lv_obj_add_flag( ui_Image7, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_clear_flag( ui_Image7, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+
+ui_LabelReport = lv_label_create(ui_ScreenMain);
+lv_obj_set_width( ui_LabelReport, 260);
+lv_obj_set_height( ui_LabelReport, 60);
+lv_obj_set_x( ui_LabelReport, 0 );
+lv_obj_set_y( ui_LabelReport, 22 );
+lv_obj_set_align( ui_LabelReport, LV_ALIGN_CENTER );
+lv_label_set_long_mode(ui_LabelReport,LV_LABEL_LONG_SCROLL_CIRCULAR);
+lv_label_set_text(ui_LabelReport,"The journey of a thousand miles begins with a single step.");
+lv_obj_add_flag( ui_LabelReport, LV_OBJ_FLAG_SCROLL_ONE );   /// Flags
+lv_obj_clear_flag( ui_LabelReport, LV_OBJ_FLAG_SCROLL_CHAIN );    /// Flags
+lv_obj_set_scrollbar_mode(ui_LabelReport, LV_SCROLLBAR_MODE_ON);
+lv_obj_set_style_text_color(ui_LabelReport, lv_color_hex(0x616161), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_opa(ui_LabelReport, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_LabelReport, &lv_font_montserrat_14, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_radius(ui_LabelReport, 5, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_bg_color(ui_LabelReport, lv_color_hex(0xFFDDBE), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_bg_opa(ui_LabelReport, 80, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_bg_grad_color(ui_LabelReport, lv_color_hex(0x1F6A82), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_bg_main_stop(ui_LabelReport, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_bg_grad_stop(ui_LabelReport, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_bg_grad_dir(ui_LabelReport, LV_GRAD_DIR_VER, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 lv_obj_add_event_cb(ui_ImgBtnPlay, ui_event_ImgBtnPlay, LV_EVENT_ALL, NULL);
 lv_obj_add_event_cb(ui_ImgBtnSet, ui_event_ImgBtnSet, LV_EVENT_ALL, NULL);

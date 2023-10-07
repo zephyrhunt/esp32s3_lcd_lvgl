@@ -45,34 +45,21 @@ void app_main(void)
 
     while (1) {
 
-        static uint8_t press_flag = 0;
-        if (gpio_get_level(0) == 0 && press_flag == 0)
-        {
-            printf("Hello world!\n");
-            if (lv_scr_act() == ui_ScreenMain1)
-                lv_scr_load(ui_ScreenMain);
-//                lv_event_send(ui_ImgBtnWeather2, LV_EVENT_CLICKED, 0);
-            else
-                lv_scr_load(ui_ScreenMain1);
-//                lv_event_send(ui_ImgBtnControl, LV_EVENT_CLICKED, 0);
-
-            press_flag = 1;
-        } else if (gpio_get_level(0) == 1){
-//            lv_event_send(ui_ImgBtnPlay, LV_EVENT_RELEASED, 0);
-            press_flag = 0;
-        }
 
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
+
+extern WeatherInfo_t weather_info;
 void NETTask(void *par)
 {
     WIFI_StaInit();
     WEATHER_HttpInit();
     while (1) {
         WEATHER_HttpGet();
-        vTaskDelay(pdMS_TO_TICKS(10000));
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 
@@ -85,6 +72,7 @@ void LVTask(void *par)
         run_times = xTaskGetTickCount();
         lv_tick_inc(10);
         lv_timer_handler();
+
         vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
 //        vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -92,9 +80,63 @@ void LVTask(void *par)
 
 void LVUpStatusTask(void *par)
 {
+    static uint8_t set_flag = 0;
     while (1) {
+        if (WiFi_GetConnectStatus() == 1 && set_flag == 0){
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi2, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi3, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            set_flag = 1;
+        }
+        else if (set_flag == 1 && WiFi_GetConnectStatus() == 0) {
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi1, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi2, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi3, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            set_flag = 0;
+        }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        lv_label_set_text_fmt(ui_Weather, "Weather:%s", weather_info.weather);
+        lv_label_set_text_fmt(ui_LabelDate, "Date:%s", weather_info.date);
+        lv_label_set_text_fmt(ui_LabelReport, "The highest temperature is %s°, the lowest is %s°.\n The journey of a thousand miles begins with a single step.\n", weather_info.temp_high, weather_info.temp_low);
 
+        static int16_t slider_value = 0;
+        static uint8_t press_flag = 0;
+        static uint8_t is_inc = 1;
+        if (gpio_get_level(0) == 0 && press_flag == 0)
+        {
+            printf("Hello world!\n");
+            if (lv_scr_act() == ui_ScreenMain)
+                lv_scr_load_anim(ui_ScreenMain1, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            else if (lv_scr_act() == ui_ScreenMain1)
+                lv_scr_load_anim(ui_ScreenMain2, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            else if (lv_scr_act() == ui_ScreenMain2)
+                lv_scr_load_anim(ui_ScreenMain3, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            else if (lv_scr_act() == ui_ScreenMain3)
+                lv_scr_load_anim(ui_ScreenMain, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            press_flag = 1;
+        } else if (gpio_get_level(0) == 1){
+//            lv_event_send(ui_ImgBtnPlay, LV_EVENT_RELEASED, 0);
+            press_flag = 0;
+        }
+
+        if (lv_scr_act() == ui_ScreenMain2) {
+            lv_slider_set_value(ui_Slider1, slider_value*3, LV_ANIM_ON);
+        } else if (lv_scr_act() == ui_ScreenMain3) {
+            lv_obj_scroll_to_y(ui_Group, slider_value*2, LV_ANIM_ON);
+        }
+
+        if (is_inc)
+            slider_value++;
+        else
+            slider_value--;
+
+        if (slider_value >= 30) {
+            is_inc = 0;
+        } else if (slider_value <= 0)
+            is_inc = 1;
+
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }

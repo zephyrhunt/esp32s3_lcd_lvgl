@@ -33,8 +33,8 @@ extern lv_obj_t *ui_ImageWifi;
 extern lv_obj_t *ui_LabelDate;
 extern lv_obj_t *ui_LabelLocation;
 extern lv_obj_t *ui_Weather;
-extern lv_obj_t *ui_TextArea1;
 extern lv_obj_t *ui_Image7;
+extern lv_obj_t *ui_LabelReport;
 // SCREEN: ui_ScreenMain1
 void ui_ScreenMain1_screen_init(void);
 extern lv_obj_t *ui_ScreenMain1;
