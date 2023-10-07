@@ -19,6 +19,7 @@
 
 void LVTask(void *par);
 void NETTask(void *par);
+void LVUpStatusTask(void *par);
 void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -28,6 +29,8 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    lv_init();
+    LCD_Init();
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
@@ -37,22 +40,29 @@ void app_main(void)
     gpio_config(&io_conf);
 
     xTaskCreatePinnedToCore(LVTask, "lv_task", 4096, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
     xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
 
     while (1) {
 
-//        if (gpio_get_level(0) == 0 && press_flag == 0)
-//        {
-//            printf("Hello world!\n");
-//
-//            lv_event_send(ui_Button1, LV_EVENT_PRESSED, NULL);
-//            press_flag = 1;
-//        } else if (gpio_get_level(0) == 1){
-//            lv_event_send(ui_Button1, LV_EVENT_RELEASED, NULL);
-//            press_flag = 0;
-//        }
+        static uint8_t press_flag = 0;
+        if (gpio_get_level(0) == 0 && press_flag == 0)
+        {
+            printf("Hello world!\n");
+            if (lv_scr_act() == ui_ScreenMain1)
+                lv_scr_load(ui_ScreenMain);
+//                lv_event_send(ui_ImgBtnWeather2, LV_EVENT_CLICKED, 0);
+            else
+                lv_scr_load(ui_ScreenMain1);
+//                lv_event_send(ui_ImgBtnControl, LV_EVENT_CLICKED, 0);
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+            press_flag = 1;
+        } else if (gpio_get_level(0) == 1){
+//            lv_event_send(ui_ImgBtnPlay, LV_EVENT_RELEASED, 0);
+            press_flag = 0;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -68,13 +78,23 @@ void NETTask(void *par)
 
 void LVTask(void *par)
 {
-    lv_init();
-    LCD_Init();
     lv_port_disp_init();
     ui_init();
     while (1) {
-        lv_tick_inc(5);
+        static TickType_t run_times = 0;
+        run_times = xTaskGetTickCount();
+        lv_tick_inc(10);
         lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
+//        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void LVUpStatusTask(void *par)
+{
+    while (1) {
+
+        vTaskDelay(pdMS_TO_TICKS(100));
+
     }
 }
