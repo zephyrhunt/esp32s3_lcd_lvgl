@@ -30,7 +30,6 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     lv_init();
-    LCD_Init();
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
@@ -43,11 +42,12 @@ void app_main(void)
     xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
     xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
 
-    while (1) {
-
-
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
+    // it will be deleted
+//    while (1) {
+//
+//
+//        vTaskDelay(pdMS_TO_TICKS(50));
+//    }
 }
 
 

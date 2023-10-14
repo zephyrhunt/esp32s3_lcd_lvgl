@@ -150,6 +150,7 @@ void lv_port_disp_init(void)
 /*Initialize your display and the required peripherals.*/
 static void disp_init(void)
 {
+    LCD_Init();
     /*You code here*/
 }
 
