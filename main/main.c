@@ -17,7 +17,12 @@
 #include "audio_element.h"
 #include "audio_pipeline.h"
 
-#include "board.h"
+//#include "esp_gatt_common_api.h"
+#include "ble_gatts_module.h"
+//#include "board.h"
+#include "esp_bt.h"
+#include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #define TAG "main"
 
 /**
@@ -32,20 +37,14 @@ void LVUpStatusTask(void *par);
  */
 void app_main(void)
 {
-    audio_element_handle_t a;
-    audio_element_handle_t i2s_stream_writer, mp3_decoder;
-
-    audio_board_handle_t board_handle = audio_board_init();
-    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_BOTH, AUDIO_HAL_CTRL_START);
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+    ble_init();
 
-//    lv_init();
-    lv_port_disp_init();
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
@@ -56,7 +55,7 @@ void app_main(void)
 
     xTaskCreatePinnedToCore(LVTask, "lv_task", 4096, NULL, 5, NULL, 1);
     xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
-
+//
     xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
 
     // it will be deleted
@@ -92,7 +91,9 @@ void NETTask(void *par)
  */
 void LVTask(void *par)
 {
-//    ui_init();
+    lv_init();
+    lv_port_disp_init();
+    ui_init();
     while (1) {
         static TickType_t run_times = 0;
         run_times = xTaskGetTickCount();
