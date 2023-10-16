@@ -649,6 +649,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
      * so here call each profile's callback */
     do {
         int idx;
+        // 循环执行所有的回调函数
         for (idx = 0; idx < PROFILE_NUM; idx++) {
             if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a certain gatt_if, need to call every profile cb function */
                     gatts_if == gl_profile_tab[idx].gatts_if) {
