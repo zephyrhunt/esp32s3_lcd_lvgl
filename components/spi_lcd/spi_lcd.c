@@ -19,12 +19,12 @@
 /* Private typedef -----------------------------------------------------------*/
 
 #define PIN_NUM_MISO 11
-#define PIN_NUM_MOSI 8
-#define PIN_NUM_CLK  3
+#define PIN_NUM_MOSI 13
+#define PIN_NUM_CLK  12
 #define PIN_NUM_CS   10
-#define PIN_NUM_DC   46
-#define PIN_NUM_RST  9
-#define PIN_NUM_BCKL 12
+#define PIN_NUM_DC   9
+#define PIN_NUM_RST  14
+#define PIN_NUM_BCKL 21
 #define PARALLEL_LINES 16
 #define LCD_HOST   SPI2_HOST
 
@@ -53,7 +53,7 @@ void LCD_HALInit()
 #ifdef CONFIG_LCD_OVERCLOCK
         .clock_speed_hz=26*1000*1000,           //Clock out at 26 MHz
 #else
-        .clock_speed_hz=60*1000*1000,           //Clock out at 10 MHz
+        .clock_speed_hz=80*1000*1000,           //Clock out at 10 MHz
 #endif
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
@@ -73,6 +73,7 @@ void LCD_HALInit()
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pull_up_en = true;
     gpio_config(&io_conf);
+
 
     //Reset the display
     gpio_set_level(PIN_NUM_RST, 0);
@@ -277,7 +278,7 @@ void LCD_ColorFill(uint16_t sx,uint16_t sy, uint16_t ex, uint16_t ey, uint16_t *
   */
 void LCD_SetDirection(uint8_t direction)
 {
-    direction = LCD_RGBMODE | LCD_MV | LCD_MX;
+    direction = LCD_RGBMODE | LCD_MV | LCD_MY;
 	LCD_WriteRegData(0x16, direction);
 }
 

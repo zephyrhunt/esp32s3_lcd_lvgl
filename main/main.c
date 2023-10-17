@@ -28,7 +28,8 @@
 /**
  * @brief 任务列表
  */
-void LVTask(void *par);
+void LVTickTask(void *par);
+void LVHandlerTask(void *pa);
 void NETTask(void *par);
 void LVUpStatusTask(void *par);
 
@@ -47,13 +48,14 @@ void app_main(void)
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (1ULL<<0);
+    io_conf.pin_bit_mask = (1ULL<<1);
     io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = 1;
     gpio_config(&io_conf);
 
-    xTaskCreatePinnedToCore(LVTask, "lv_task", 4096, NULL, 5, NULL, 1);
-    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
+    xTaskCreatePinnedToCore(LVTickTask, "lv_task", 1024, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 2048, NULL, 4, NULL, 1);
     xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
 
     // it will be deleted
@@ -88,85 +90,89 @@ void NETTask(void *par)
  * @brief LVGL任务，LVGL_Tick和Handle
  * @param None
  */
-void LVTask(void *par)
+void LVTickTask(void *par)
 {
-//    lv_init();
-//    lv_port_disp_init();
-//    ui_init();
     while (1) {
         static TickType_t run_times = 0;
         run_times = xTaskGetTickCount();
-//        lv_tick_inc(10);
-//        lv_timer_handler();
-
+        lv_tick_inc(5);
         vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
-//        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
+void LVHandlerTask(void *pa)
+{
+    lv_init();
+    lv_port_disp_init();
+    ui_init();
+    while (1) {
+        lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 
+}
 /**
  * @brief 更新状态任务，刷新UI逻辑
  * @param NONE
  */
 void LVUpStatusTask(void *par)
 {
-//    static uint8_t set_flag = 0;
+    static uint8_t set_flag = 0;
+    vTaskDelay(pdMS_TO_TICKS(1000));
     while (1) {
-//        if (WiFi_GetConnectStatus() == 1 && set_flag == 0){
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi2, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi3, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            set_flag = 1;
-//        }
-//        else if (set_flag == 1 && WiFi_GetConnectStatus() == 0) {
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi1, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi2, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            lv_obj_set_style_img_recolor_opa(ui_ImageWifi3, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-//            set_flag = 0;
-//        }
-//
-//        lv_label_set_text_fmt(ui_Weather, "Weather:%s", weather_info.weather);
-//        lv_label_set_text_fmt(ui_LabelDate, "Date:%s", weather_info.date);
-//        lv_label_set_text_fmt(ui_LabelReport, "The highest temperature is %s°, the lowest is %s°.\n The journey of a thousand miles begins with a single step.\n", weather_info.temp_high, weather_info.temp_low);
-//
-//        static int16_t slider_value = 0;
-//        static uint8_t press_flag = 0;
-//        static uint8_t is_inc = 1;
-//        if (gpio_get_level(0) == 0 && press_flag == 0)
-//        {
-//            printf("Hello world!\n");
-//            if (lv_scr_act() == ui_ScreenMain)
-//                lv_scr_load_anim(ui_ScreenMain1, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
-//            else if (lv_scr_act() == ui_ScreenMain1)
-//                lv_scr_load_anim(ui_ScreenMain2, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
-//            else if (lv_scr_act() == ui_ScreenMain2)
-//                lv_scr_load_anim(ui_ScreenMain3, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
-//            else if (lv_scr_act() == ui_ScreenMain3)
-//                lv_scr_load_anim(ui_ScreenMain, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
-//            press_flag = 1;
-//        } else if (gpio_get_level(0) == 1){
-////            lv_event_send(ui_ImgBtnPlay, LV_EVENT_RELEASED, 0);
-//            press_flag = 0;
-//        }
-//
-//        if (lv_scr_act() == ui_ScreenMain2) {
-//            lv_slider_set_value(ui_Slider1, slider_value*3, LV_ANIM_ON);
-//        } else if (lv_scr_act() == ui_ScreenMain3) {
-//            lv_obj_scroll_to_y(ui_Group, slider_value*2, LV_ANIM_ON);
-//        }
-//
-//        if (is_inc)
-//            slider_value++;
-//        else
-//            slider_value--;
-//
-//        if (slider_value >= 30) {
-//            is_inc = 0;
-//        } else if (slider_value <= 0)
-//            is_inc = 1;
+        if (WiFi_GetConnectStatus() == 1 && set_flag == 0){
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi1, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi2, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi3, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+            set_flag = 1;
+        }
+        else if (set_flag == 1 && WiFi_GetConnectStatus() == 0) {
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi1, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi2, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            lv_obj_set_style_img_recolor_opa(ui_ImageWifi3, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+            set_flag = 0;
+        }
 
-        vTaskDelay(pdMS_TO_TICKS(50));
+        lv_label_set_text_fmt(ui_Weather, "Weather:%s", weather_info.weather);
+        lv_label_set_text_fmt(ui_LabelDate, "Date:%s", weather_info.date);
+        lv_label_set_text_fmt(ui_LabelReport, "The highest temperature is %s°, the lowest is %s°.\n The journey of a thousand miles begins with a single step.\n", weather_info.temp_high, weather_info.temp_low);
+
+        static int16_t slider_value = 0;
+        static uint8_t press_flag = 0;
+        static uint8_t is_inc = 1;
+        if (gpio_get_level(1) == 0 && press_flag == 0)
+        {
+            if (lv_scr_act() == ui_ScreenMain)
+                lv_scr_load_anim(ui_ScreenMain1, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            else if (lv_scr_act() == ui_ScreenMain1)
+                lv_scr_load_anim(ui_ScreenMain2, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            else if (lv_scr_act() == ui_ScreenMain2)
+                lv_scr_load_anim(ui_ScreenMain3, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            else if (lv_scr_act() == ui_ScreenMain3)
+                lv_scr_load_anim(ui_ScreenMain, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            press_flag = 1;
+        } else if (gpio_get_level(1) == 1){
+//            lv_event_send(ui_ImgBtnPlay, LV_EVENT_RELEASED, 0);
+            press_flag = 0;
+        }
+//
+        if (lv_scr_act() == ui_ScreenMain2) {
+            lv_slider_set_value(ui_Slider1, slider_value*3, LV_ANIM_ON);
+        } else if (lv_scr_act() == ui_ScreenMain3) {
+            lv_obj_scroll_to_y(ui_Group, slider_value*2, LV_ANIM_ON);
+        }
+
+        if (is_inc)
+            slider_value++;
+        else
+            slider_value--;
+
+        if (slider_value >= 30) {
+            is_inc = 0;
+        } else if (slider_value <= 0)
+            is_inc = 1;
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
