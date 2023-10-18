@@ -43,8 +43,8 @@ void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
 #define LEDC_MODE               LEDC_LOW_SPEED_MODE
 #define LEDC_OUTPUT_IO          (PIN_NUM_BCKL) // Define the output GPIO
 #define LEDC_CHANNEL            LEDC_CHANNEL_0
-#define LEDC_DUTY_RES           LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
-#define LEDC_DUTY               (4095) // Set duty to 50%. ((2 ** 13) - 1) * 50% = 4095
+#define LEDC_DUTY_RES           LEDC_TIMER_8_BIT // Set duty resolution to 13 bits
+#define LEDC_DUTY               (128) // Set duty to 50%. ((2 ** 8) - 1) * 50% = 128
 #define LEDC_FREQUENCY          (5000) // Frequency in Hertz. Set frequency at 5 kHz
 
 static void LCD_BCKLInit(void)
@@ -70,6 +70,14 @@ static void LCD_BCKLInit(void)
         .hpoint         = 0
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+}
+
+void LCD_SetBlck(uint8_t brightness)
+{
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, brightness);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 }
 
 void LCD_HALInit()
@@ -116,8 +124,6 @@ void LCD_HALInit()
     vTaskDelay(100 / portTICK_PERIOD_MS);
     LCD_BCKLInit();
 //    gpio_set_level(PIN_NUM_BCKL, 1);
-    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 2000);
-    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 }
 void LCD_WriteReg(uint8_t reg)
 {

@@ -43,4 +43,5 @@ void LCD_DrawPoint(uint16_t x, uint16_t y, uint16_t color);
 void LCD_ShowImage(const uint8_t * img, uint16_t width, uint16_t height);
 void LCD_ColorFill(uint16_t sx,uint16_t sy, uint16_t ex, uint16_t ey, uint16_t *color);
 void LCD_Flush(uint16_t x1, uint16_t x2, uint16_t y1, uint16_t y2, uint16_t * color_map);
+void LCD_SetBlck(uint8_t brightness);
 #endif
