@@ -1,6 +1,7 @@
+set(srcs "spi_lcd.c")
 
 set(include_dirs .)
 
 idf_component_register(SRC_DIRS .
                        INCLUDE_DIRS .
-                       REQUIRES driver lvgl spi_lcd led_strip sd_card)
+                       REQUIRES driver fatfs sdmmc)

@@ -6,6 +6,7 @@
 #include "lvgl.h"
 #include "spi_lcd.h"
 #include "lv_port_disp.h"
+#include "lv_port_fs.h"
 #include "led_strip.h"
 #include "ui.h"
 #include "driver/gpio.h"
@@ -24,6 +25,7 @@
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include "gpio_key.h"
+#include "sd_card.h"
 #define TAG "main"
 
 /**
@@ -46,25 +48,17 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-//    gpio_config_t io_conf = {};
-//    io_conf.intr_type = GPIO_INTR_DISABLE;
-//    io_conf.mode = GPIO_MODE_INPUT;
-//    io_conf.pin_bit_mask = (1ULL<<1);
-//    io_conf.pull_down_en = 0;
-//    io_conf.pull_up_en = 1;
-//    gpio_config(&io_conf);
-
     xTaskCreatePinnedToCore(LVTickTask, "lv_tick_task", 4096, NULL, 5, NULL, 1);
     xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 2048, NULL, 4, NULL, 1);
+    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
     xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
 
     // it will be deleted
-    while (1) {
-
-
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
+//    while (1) {
+//
+//
+//        vTaskDelay(pdMS_TO_TICKS(50));
+//    }
 }
 
 
@@ -182,6 +176,7 @@ void LVHandlerTask(void *pa)
 {
     lv_init();
     lv_port_disp_init();
+    lv_port_fs_init();
     ui_init();
     while (1) {
         lv_timer_handler();
@@ -214,7 +209,23 @@ void LVUpStatusTask(void *par)
         }
 
         lv_label_set_text_fmt(ui_Weather, "Weather:%s", weather_info.weather);
-        lv_label_set_text_fmt(ui_LabelDate, "Date:%s", weather_info.date);
+        lv_fs_file_t f;
+        lv_res_t res;
+
+        res = lv_fs_open(&f, "S:/nihao.txt", LV_FS_MODE_RD);
+        if (res != LV_FS_RES_OK) printf("open file error, res == %d\n", res);
+
+        uint32_t num;
+        uint8_t buf[20];
+        res = lv_fs_read(&f, buf, 20, &num);
+
+        printf("read %ld bytes, file %s\n", num, buf);
+        if (num > 2)
+            buf[num - 1] = '\0';
+
+        lv_fs_close(&f);
+
+        lv_label_set_text_fmt(ui_LabelDate, "Date:%s", buf);
         lv_label_set_text_fmt(ui_LabelReport, "The highest temperature is %s°, the lowest is %s°.\n The journey of a thousand miles begins with a single step.\n", weather_info.temp_high, weather_info.temp_low);
 
         static int16_t slider_value = 0;
