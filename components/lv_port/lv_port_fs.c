@@ -98,6 +98,7 @@ static void fs_init(void)
 
     /*You code here*/
     SD_Init();
+
 }
 
 /**
@@ -128,7 +129,6 @@ static void * fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode)
 
     char filepath[256] = {0};
     sprintf(filepath, LV_FS_PATH"%s", path);
-
     return fopen(filepath, f);
 }
 
@@ -168,6 +168,7 @@ static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_
     *br = fread(buf, 1, btr, file_p);
 
     res = (int32_t)(*br) < 0? LV_FS_RES_UNKNOWN : LV_FS_RES_OK;
+    res = LV_FS_RES_OK;
     return res;
 }
 
@@ -205,15 +206,15 @@ static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs
     lv_fs_res_t res = LV_FS_RES_NOT_IMP;
 
     /*Add your code here*/
-    switch (whence) {
-        case LV_FS_SEEK_SET: {
-            LV_UNUSED(drv);
-            fseek(file_p, pos, SEEK_SET);
-        }
-        default:
-            break;
-        }
+//    switch (whence) {
+//        case LV_FS_SEEK_SET: {
+//            LV_UNUSED(drv);
+//        }
+//        default:
+//            break;
+//        }
 
+    fseek(file_p, pos, SEEK_SET);
     res = LV_FS_RES_OK;
     return res;
 }
