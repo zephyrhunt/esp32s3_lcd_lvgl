@@ -102,7 +102,7 @@ static void button_init(void)
 {
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = ((1ULL<<BUTTON_UP) | (1ULL<<BUTTON_DOWN) | (1ULL<<BUTTON_SUP) | (1ULL<<BUTTON_SMID) | (1ULL<<BUTTON_SDOWN));
-    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = true;
     gpio_config(&io_conf);
     /*Your code comes here*/
@@ -132,7 +132,7 @@ static void button_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 /*Get ID  (0, 1, 2 ..) of the pressed button*/
 static int8_t button_get_pressed_id(void)
 {
-    uint8_t i;
+    int8_t i;
 
     /*Check to buttons see which is being pressed (assume there are 2 buttons)*/
     for(i = 0; i < 2; i++) {

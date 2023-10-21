@@ -25,9 +25,11 @@
 #include "esp_bt_device.h"
 #include "gpio_key.h"
 #include "sd_card.h"
+#include "lvgl.h"
 
 //#include "ui.h"
 #include "gui_guider.h"
+#include "custom.h"
 #define TAG "main"
 
 /**
@@ -60,8 +62,6 @@ void app_main(void)
 
     // it will be deleted
 //    while (1) {
-//
-//
 //        vTaskDelay(pdMS_TO_TICKS(50));
 //    }
 }
@@ -69,6 +69,7 @@ void app_main(void)
 
 extern WeatherInfo_t weather_info;
 
+extern lv_obj_t * cont;
 /**
  * @brief 网络任务，连接WIFI，蓝牙等，更新数据
  * @param par
@@ -86,18 +87,32 @@ void NETTask(void *par)
     }
 }
 
+int16_t id = 0; // id in 0 to 2
 void KEY_UpHandler(KEY_Event event)
 {
-    if (event == PRESS_DOWN)
+    if (event == PRESS_DOWN){
         printf("k1 press down\n");
+        id--;
+        if (id < 0)
+            id = 18;
+//        lv_obj_set_tile(guider_ui.screen_tileview_1, guider_ui.screen_tileview_1_tile_1, LV_ANIM_ON);
+//        lv_obj_set_tile(guider_ui.screen_tileview_1, lv_obj_get_child(guider_ui.screen_tileview_1, id), LV_ANIM_ON);
+        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
+    }
 
 }
 
 int16_t brightness = 100;
 void KEY_DownHandler(KEY_Event event)
 {
-    if (event == PRESS_DOWN)
+    if (event == PRESS_DOWN) {
+        id++;
+        if (id > 18)
+            id= 0;
         printf("k2 press down\n");
+//        lv_obj_set_tile(guider_ui.screen_tileview_1, lv_obj_get_child(guider_ui.screen_tileview_1, id), LV_ANIM_ON);
+        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
+    }
 }
 void KEY_SUpHandler(KEY_Event event)
 {
@@ -184,7 +199,7 @@ void LVHandlerTask(void *pa)
     lv_port_disp_init();
     lv_port_fs_init();
     setup_ui(&guider_ui);
-//    ui_init();
+//    custom_init(&guider_ui);
     while (1) {
         lv_timer_handler();
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -197,8 +212,6 @@ void LVHandlerTask(void *pa)
  */
 void LVUpStatusTask(void *par)
 {
-    static uint8_t set_flag = 0;
-    vTaskDelay(pdMS_TO_TICKS(1000));
     while (1) {
 
         vTaskDelay(pdMS_TO_TICKS(10));

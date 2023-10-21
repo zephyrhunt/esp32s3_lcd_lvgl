@@ -20,7 +20,7 @@ extern "C" {
 #include "font/lv_font.h"
 #endif
 
-LV_FONT_DECLARE(lv_customer_font_Adventpro_regular_16)
+LV_FONT_DECLARE(lv_customer_font_simsun_12)
 
 
 #ifdef __cplusplus

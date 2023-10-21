@@ -75,5 +75,4 @@ void SD_Init()
     ESP_LOGI(TAG, "Filesystem mounted");
 
     sdmmc_card_print_info(stdout, card);
-
 }

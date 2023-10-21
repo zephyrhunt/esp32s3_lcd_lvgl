@@ -20,22 +20,15 @@ typedef struct
   
 	lv_obj_t *screen;
 	bool screen_del;
-	lv_obj_t *screen_btnm_1;
-	lv_obj_t *screen_spangroup_1;
-	lv_obj_t *screen_tileview_1;
-	lv_obj_t *screen_tileview_1_hello;
-	lv_obj_t *screen_tileview_1_tile_2;
-	lv_obj_t *screen_tileview_1_tile_3;
-	lv_obj_t *screen_btn_1;
-	lv_obj_t *screen_btn_1_label;
-	lv_obj_t *screen_msgbox_1;
-	lv_obj_t *screen_btn_3;
-	lv_obj_t *screen_btn_3_label;
-	lv_obj_t *screen_img_1;
-	lv_obj_t *screen_btn_2;
-	lv_obj_t *screen_btn_2_label;
+	lv_obj_t *screen_cont_timer;
+	lv_obj_t *screen_cont_days;
+	lv_obj_t *screen_text_day;
+	lv_obj_t *screen_cont_time;
+	lv_obj_t *screen_text_time;
+	lv_obj_t *screen_cont_nichijou;
+	lv_obj_t *screen_text_nichijou;
+	lv_obj_t *screen_cont_weather;
 	lv_obj_t *screen_label_1;
-	lv_obj_t *screen_img_2;
 }lv_ui;
 
 void ui_init_style(lv_style_t * style);
@@ -44,14 +37,15 @@ void setup_ui(lv_ui *ui);
 extern lv_ui guider_ui;
 
 void setup_scr_screen(lv_ui *ui);
-LV_IMG_DECLARE(_nichijou_alpha_80x52);
 
-LV_FONT_DECLARE(lv_font_simsun_16)
+LV_IMG_DECLARE(_nichijoubg_320x240);
+
+LV_FONT_DECLARE(lv_font_simsun_28)
+LV_FONT_DECLARE(lv_font_Abel_regular_28)
+LV_FONT_DECLARE(lv_font_Abel_regular_12)
+LV_FONT_DECLARE(lv_font_Abel_regular_40)
 LV_FONT_DECLARE(lv_font_simsun_12)
-LV_FONT_DECLARE(lv_font_montserratMedium_12)
-LV_FONT_DECLARE(lv_font_montserratMedium_19)
-LV_FONT_DECLARE(lv_font_montserratMedium_14)
-LV_FONT_DECLARE(lv_font_Alatsi_Regular_13)
+LV_FONT_DECLARE(lv_font_montserratMedium_16)
 
 
 #ifdef __cplusplus
