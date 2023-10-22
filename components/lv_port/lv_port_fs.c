@@ -74,6 +74,7 @@ void lv_port_fs_init(void)
     lv_fs_drv_init(&fs_drv);
 
     /*Set up fields...*/
+//    fs_drv.cache_size = 16;
     fs_drv.letter = 'S';
     fs_drv.open_cb = fs_open;
     fs_drv.close_cb = fs_close;
@@ -170,8 +171,6 @@ static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_
     *br = fread(buf, 1, btr, (FILE *)file_p);
 
     res = (int32_t)(*br) < 0? LV_FS_RES_UNKNOWN : LV_FS_RES_OK;
-//    printf("isread:%ld\n", *br);
-//    res = LV_FS_RES_OK;
     return res;
 }
 
@@ -192,8 +191,6 @@ static lv_fs_res_t fs_write(lv_fs_drv_t * drv, void * file_p, const void * buf, 
     LV_UNUSED(drv);
     *bw = fwrite(buf, 1, btw, file_p);
     res = (int32_t)(*bw) < 0? LV_FS_RES_UNKNOWN : LV_FS_RES_OK;
-
-//    printf("iswrite\n");
     return res;
 }
 
@@ -228,11 +225,9 @@ static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p)
 
     /*Add your code here*/
     LV_UNUSED(drv);
-    off_t offset = fseek(file_p, 0, SEEK_CUR);
-//    *pos_p = ftell(file_p);
-    *pos_p = offset;
-
-//    printf("istell:%ld\n", *pos_p);
+//    off_t offset = fseek(file_p, 0, SEEK_CUR);
+    *pos_p = ftell(file_p);
+//    *pos_p = offset;
     res = LV_FS_RES_OK;
     return res;
 }
@@ -248,8 +243,6 @@ static void * fs_dir_open(lv_fs_drv_t * drv, const char * path)
     LV_UNUSED(drv);
     void * dir = NULL;
     /*Add your code here*/
-//    dir = ...           /*Add your code here*/
-    printf("diropen\n");
     char dirpath[128] = {0};
     sprintf(dirpath, LV_FS_PATH"%s", path);
     dir = opendir(dirpath);
@@ -269,23 +262,18 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
     lv_fs_res_t res = LV_FS_RES_NOT_IMP;
 
     /*Add your code here*/
-    printf("dirread\n");
     struct dirent *p_dirent = NULL;
 
-//    while (true) {
-        p_dirent = readdir(rddir_p);
-        if (NULL != p_dirent) {
-            if (p_dirent->d_type == DT_DIR) {
-                sprintf(fn, "/%s", p_dirent->d_name);
-            } else {
-                strcpy(fn, p_dirent->d_name);
-            }
+    p_dirent = readdir(rddir_p);
+    if (NULL != p_dirent) {
+        if (p_dirent->d_type == DT_DIR) {
+            sprintf(fn, "/%s", p_dirent->d_name);
         } else {
-            fn[0] = '\0';
-//            strcpy(fn, p_dirent->d_name);
-//            break;
+            strcpy(fn, p_dirent->d_name);
         }
-//    }
+    } else {
+        fn[0] = '\0';
+    }
 
     res = LV_FS_RES_OK;
     return res;

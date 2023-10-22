@@ -26,6 +26,9 @@
 #include "gpio_key.h"
 #include "sd_card.h"
 #include "lvgl.h"
+#include "time.h"
+#include "esp_netif_sntp.h"
+#include "esp_sntp.h"
 
 //#include "ui.h"
 #include "gui_guider.h"
@@ -41,6 +44,91 @@ void LVHandlerTask(void *pa);
 void NETTask(void *par);
 void LVUpStatusTask(void *par);
 
+void time_sync_notification_cb(struct timeval *tv)
+{
+    ESP_LOGI(TAG, "Notification of a time synchronization event");
+}
+
+static void print_servers(void)
+{
+    ESP_LOGI(TAG, "List of configured NTP servers:");
+
+    for (uint8_t i = 0; i < SNTP_MAX_SERVERS; ++i){
+        if (esp_sntp_getservername(i)){
+            ESP_LOGI(TAG, "server %d: %s", i, esp_sntp_getservername(i));
+        } else {
+            // we have either IPv4 or IPv6 address, let's print it
+            char buff[48];
+            ip_addr_t const *ip = esp_sntp_getserver(i);
+            if (ipaddr_ntoa_r(ip, buff, 48) != NULL)
+                ESP_LOGI(TAG, "server %d: %s", i, buff);
+        }
+    }
+}
+
+static void obtain_time(void)
+{
+    ESP_LOGI(TAG, "Initializing and starting SNTP");
+    /*
+     * This is the basic default config with one server and starting the service
+     */
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    config.sync_cb = time_sync_notification_cb;     // Note: This is only needed if we want
+
+    esp_netif_sntp_init(&config);
+    print_servers();
+
+    // wait for time to be set
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    int retry = 0;
+    const int retry_count = 30;
+    while (esp_netif_sntp_sync_wait(200 / portTICK_PERIOD_MS) == ESP_ERR_TIMEOUT && ++retry < retry_count) {
+        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+    }
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+//    ESP_ERROR_CHECK( example_disconnect() );
+    esp_netif_sntp_deinit();
+}
+
+time_t now;
+struct tm timeinfo;
+char strftime_buf[64];
+void ntp_init()
+{
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    if (timeinfo.tm_year < (2016 - 1900)) {
+        ESP_LOGI(TAG, "Time is not set yet. Connecting to WiFi and getting time over NTP.");
+        obtain_time();
+        // update 'now' variable with current time
+        time(&now);
+    }
+    // Set timezone to China Standard Time
+    setenv("TZ", "CST-8", 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+
+    if (sntp_get_sync_mode() == SNTP_SYNC_MODE_SMOOTH) {
+        struct timeval outdelta;
+        while (sntp_get_sync_status() == SNTP_SYNC_STATUS_IN_PROGRESS) {
+            adjtime(NULL, &outdelta);
+            ESP_LOGI(TAG, "Waiting for adjusting time ... outdelta = %jd sec: %li ms: %li us",
+                     (intmax_t)outdelta.tv_sec,
+                     outdelta.tv_usec/1000,
+                     outdelta.tv_usec%1000);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+    }
+    const int deep_sleep_sec = 10;
+    ESP_LOGI(TAG, "Entering deep sleep for %d seconds", deep_sleep_sec);
+//    esp_deep_sleep(1000000LL * deep_sleep_sec);
+}
 /**
  * @brief 主函数，初始化其他任务，完成后删除
  */
@@ -78,13 +166,53 @@ extern lv_obj_t * cont;
 void NETTask(void *par)
 {
 //    ble_init();
-//    WIFI_StaInit();
+    WIFI_StaInit();
 //    WEATHER_HttpInit();
-    while (1) {
-        if (WiFi_GetConnectStatus() == 1)
-            WEATHER_HttpGet();
+    ntp_init();
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+    char buf[20] = {};
+    uint16_t year = timeinfo.tm_year+1900;
+    sprintf(buf, "%4d年", year);
+    lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 0), buf);
+    sprintf(buf, "星期%1d", timeinfo.tm_wday);
+    lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 2), buf);
+    sprintf(buf, "%2d月%2d日", (timeinfo.tm_mon+1), timeinfo.tm_mday);
+    lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 3), buf);
+    while (1) {
+        if (WiFi_GetConnectStatus() == 1) {
+            time(&now);
+            localtime_r(&now, &timeinfo);
+            strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+            printf("day:%d,hour:%d,min:%d,sec:%d,Mon:%d,week:%d\n", timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mon, timeinfo.tm_wday);
+            ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+            sprintf(buf, "%2d", timeinfo.tm_hour);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf);
+            sprintf(buf, "%02d", timeinfo.tm_min);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 2), buf);
+            sprintf(buf, "%02d", timeinfo.tm_sec);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 4), buf);
+
+            if (timeinfo.tm_sec % 2) {
+                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), ":");
+                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), ":");
+            } else {
+                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), " ");
+                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
+            }
+//            if (lv_obj_has_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), LV_OBJ_FLAG_HIDDEN))
+//            {
+//                lv_obj_clear_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), LV_OBJ_FLAG_HIDDEN);
+//                lv_obj_clear_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), LV_OBJ_FLAG_HIDDEN);
+//            }else {
+//                lv_obj_add_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), LV_OBJ_FLAG_HIDDEN);
+//                lv_obj_add_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), LV_OBJ_FLAG_HIDDEN);
+//            }
+//            lv_label_set_text(guider_ui.screen_main_text_time, );
+        }
+//            WEATHER_HttpGet();
+
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -98,7 +226,7 @@ void KEY_UpHandler(KEY_Event event)
             id = 18;
 //        lv_obj_set_tile(guider_ui.screen_tileview_1, guider_ui.screen_tileview_1_tile_1, LV_ANIM_ON);
 //        lv_obj_set_tile(guider_ui.screen_tileview_1, lv_obj_get_child(guider_ui.screen_tileview_1, id), LV_ANIM_ON);
-        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
+//        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
     }
 
 }
@@ -112,9 +240,14 @@ void KEY_DownHandler(KEY_Event event)
             id= 0;
         printf("k2 press down\n");
 //        lv_obj_set_tile(guider_ui.screen_tileview_1, lv_obj_get_child(guider_ui.screen_tileview_1, id), LV_ANIM_ON);
-        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
+//        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
+        if (lv_obj_has_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN))
+            lv_obj_clear_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
+        else
+            lv_obj_add_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
     }
 }
+
 void KEY_SUpHandler(KEY_Event event)
 {
     if (event == PRESS_DOWN){
@@ -224,33 +357,24 @@ static void btn_event_cb(lv_event_t *event)
 
 static void image_display(void)
 {
-//    lv_indev_t *indev = lv_indev_get_next(NULL);
-
-//    if ((lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) ||
-//            lv_indev_get_type(indev) == LV_INDEV_TYPE_ENCODER) {
-//        ESP_LOGI(TAG, "Input device type is keypad");
-//        lv_indev_set_group(indev, g_btn_op_group);
-//    }
     g_btn_op_group = lv_group_create();
+
 
     lv_obj_t *list = lv_list_create(lv_scr_act());
     lv_obj_set_size(list, 170, 220);
     lv_obj_set_style_border_width(list, 0, LV_STATE_DEFAULT);
     lv_obj_align(list, LV_ALIGN_LEFT_MID, -15, 0);
+
     lv_obj_t *img = lv_img_create(lv_scr_act());
     /* Get file name in storage */
     lv_fs_dir_t dir;
     lv_fs_dir_open(&dir, "S:/");
     /* Scan files in storage */
     while (true) {
-
-//        p_dirent = readdir(p_dir_stream);
         char fn[64];
         lv_fs_dir_read(&dir, fn);
-        printf("fn::%s\n", fn);
         lv_obj_t * btn = NULL;
         if ('\0' != fn[0]) {
-//            lv_obj_t *btn = lv_list_add_btn(list, LV_SYMBOL_IMAGE, p_dirent->d_name);
             if (fn[0] == '/') {
                 btn = lv_list_add_btn(list, LV_SYMBOL_DIRECTORY, &fn[1]);
             }
@@ -260,7 +384,6 @@ static void image_display(void)
             lv_group_add_obj(g_btn_op_group, btn);
             lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, (void *) img);
         } else {
-//            closedir(p_dir_stream);
             lv_fs_dir_close(&dir);
             break;
         }
@@ -270,30 +393,15 @@ static void image_display(void)
 
 
 lv_ui guider_ui;
+
+
 void LVHandlerTask(void *pa)
 {
     lv_init();
     lv_port_disp_init();
     lv_port_fs_init();
-    lv_obj_t * img = lv_img_create(lv_scr_act());
-//    lv_img_set_src(img, "S:/bg.png");
-
-    image_display();
-//    lv_fs_file_t f;
-//    lv_res_t res;
-//    res = lv_fs_open(&f, "S:/tell5.jpg", LV_FS_MODE_RD);
-//    if (res != LV_FS_RES_OK) printf("open file error, res == %d\n", res);
-//
-//    uint32_t num;
-//    uint8_t buf[256];
-//    res = lv_fs_read(&f, buf, 20, &num);
-//
-//    printf("read %ld bytes, file %s\n", num, buf);
-//    if (num > 2)
-//        buf[num - 1] = '\0';
-//
-//    lv_fs_close(&f);
-//    setup_ui(&guider_ui)
+    setup_ui(&guider_ui);
+    lv_obj_add_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
 //    custom_init(&guider_ui);
     while (1) {
         lv_timer_handler();
