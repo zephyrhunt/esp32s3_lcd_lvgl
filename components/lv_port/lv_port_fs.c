@@ -14,6 +14,8 @@
 #include "sd_card.h"
 #include "esp_log.h"
 #include "stdio.h"
+#include "dirent.h"
+#include "fcntl.h"
 
 /*********************
  *      DEFINES
@@ -127,7 +129,7 @@ static void * fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode)
         f = "rb+";         /*Add your code here*/
     }
 
-    char filepath[256] = {0};
+    char filepath[128] = {0};
     sprintf(filepath, LV_FS_PATH"%s", path);
     return fopen(filepath, f);
 }
@@ -165,10 +167,11 @@ static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_
 
     /*Add your code here*/
     LV_UNUSED(drv);
-    *br = fread(buf, 1, btr, file_p);
+    *br = fread(buf, 1, btr, (FILE *)file_p);
 
     res = (int32_t)(*br) < 0? LV_FS_RES_UNKNOWN : LV_FS_RES_OK;
-    res = LV_FS_RES_OK;
+//    printf("isread:%ld\n", *br);
+//    res = LV_FS_RES_OK;
     return res;
 }
 
@@ -190,6 +193,7 @@ static lv_fs_res_t fs_write(lv_fs_drv_t * drv, void * file_p, const void * buf, 
     *bw = fwrite(buf, 1, btw, file_p);
     res = (int32_t)(*bw) < 0? LV_FS_RES_UNKNOWN : LV_FS_RES_OK;
 
+//    printf("iswrite\n");
     return res;
 }
 
@@ -205,17 +209,10 @@ static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs
 {
     lv_fs_res_t res = LV_FS_RES_NOT_IMP;
 
+    LV_UNUSED(drv);
     /*Add your code here*/
-//    switch (whence) {
-//        case LV_FS_SEEK_SET: {
-//            LV_UNUSED(drv);
-//        }
-//        default:
-//            break;
-//        }
-
-    fseek(file_p, pos, SEEK_SET);
-    res = LV_FS_RES_OK;
+    off_t offset = fseek(file_p, pos, whence);
+    res = offset < 0 ? LV_FS_RES_FS_ERR : LV_FS_RES_OK;
     return res;
 }
 /**
@@ -231,8 +228,11 @@ static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p)
 
     /*Add your code here*/
     LV_UNUSED(drv);
-    *pos_p = ftell(file_p);
+    off_t offset = fseek(file_p, 0, SEEK_CUR);
+//    *pos_p = ftell(file_p);
+    *pos_p = offset;
 
+//    printf("istell:%ld\n", *pos_p);
     res = LV_FS_RES_OK;
     return res;
 }
@@ -245,9 +245,14 @@ static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p)
  */
 static void * fs_dir_open(lv_fs_drv_t * drv, const char * path)
 {
+    LV_UNUSED(drv);
     void * dir = NULL;
     /*Add your code here*/
 //    dir = ...           /*Add your code here*/
+    printf("diropen\n");
+    char dirpath[128] = {0};
+    sprintf(dirpath, LV_FS_PATH"%s", path);
+    dir = opendir(dirpath);
     return dir;
 }
 
@@ -264,7 +269,25 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
     lv_fs_res_t res = LV_FS_RES_NOT_IMP;
 
     /*Add your code here*/
+    printf("dirread\n");
+    struct dirent *p_dirent = NULL;
 
+//    while (true) {
+        p_dirent = readdir(rddir_p);
+        if (NULL != p_dirent) {
+            if (p_dirent->d_type == DT_DIR) {
+                sprintf(fn, "/%s", p_dirent->d_name);
+            } else {
+                strcpy(fn, p_dirent->d_name);
+            }
+        } else {
+            fn[0] = '\0';
+//            strcpy(fn, p_dirent->d_name);
+//            break;
+        }
+//    }
+
+    res = LV_FS_RES_OK;
     return res;
 }
 
@@ -276,11 +299,12 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
  */
 static lv_fs_res_t fs_dir_close(lv_fs_drv_t * drv, void * rddir_p)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
+//    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
 
     /*Add your code here*/
+    closedir(rddir_p);
 
-    return res;
+    return LV_FS_RES_OK;
 }
 
 #else /*Enable this file at the top*/

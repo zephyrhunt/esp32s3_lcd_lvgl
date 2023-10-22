@@ -37,17 +37,18 @@ void SD_Init()
 {
     esp_err_t ret;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+//    host.max_freq_khz = SDMMC_FREQ_PROBING;
     sdmmc_card_t *card;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
-        .max_files = 5,
+        .max_files = 10,
         .allocation_unit_size = 16 * 1024
     };
 
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
 
-    slot_config.width = 4;
+    slot_config.width = 1;
     slot_config.clk = 7;
     slot_config.cmd = 15;
     slot_config.d0 = 6;
@@ -55,6 +56,7 @@ void SD_Init()
     slot_config.d2 = 17;
     slot_config.d3 = 16;
 
+//    slot_config.gpio_cd =
     slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
 
     ESP_LOGI(TAG, "Mounting filesystem");

@@ -32,6 +32,7 @@
 #include "custom.h"
 #define TAG "main"
 
+#include "dirent.h"
 /**
  * @brief 任务列表
  */
@@ -192,13 +193,107 @@ void LVTickTask(void *par)
         vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
     }
 }
+
+static lv_group_t *g_btn_op_group = NULL;
+
+
+static void btn_event_cb(lv_event_t *event)
+{
+    lv_obj_t *img = (lv_obj_t *) event->user_data;
+    const char *file_name = lv_list_get_btn_text(lv_obj_get_parent(event->target), event->target);
+    char *file_name_with_path = (char *) heap_caps_malloc(256, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+
+    if (NULL != file_name_with_path) {
+        /* Get full file name with mount point and folder path */
+        strcpy(file_name_with_path, "S:/spiffs/");
+        strcat(file_name_with_path, file_name);
+
+        /* Set src of image with file name */
+        lv_img_set_src(img, file_name_with_path);
+
+        /* Align object */
+        lv_obj_align(img, LV_ALIGN_CENTER, 80, 0);
+
+        /* Only for debug */
+        ESP_LOGI(TAG, "Display image file : %s", file_name_with_path);
+
+        /* Don't forget to free allocated memory */
+        free(file_name_with_path);
+    }
+}
+
+static void image_display(void)
+{
+//    lv_indev_t *indev = lv_indev_get_next(NULL);
+
+//    if ((lv_indev_get_type(indev) == LV_INDEV_TYPE_KEYPAD) ||
+//            lv_indev_get_type(indev) == LV_INDEV_TYPE_ENCODER) {
+//        ESP_LOGI(TAG, "Input device type is keypad");
+//        lv_indev_set_group(indev, g_btn_op_group);
+//    }
+    g_btn_op_group = lv_group_create();
+
+    lv_obj_t *list = lv_list_create(lv_scr_act());
+    lv_obj_set_size(list, 170, 220);
+    lv_obj_set_style_border_width(list, 0, LV_STATE_DEFAULT);
+    lv_obj_align(list, LV_ALIGN_LEFT_MID, -15, 0);
+    lv_obj_t *img = lv_img_create(lv_scr_act());
+    /* Get file name in storage */
+    lv_fs_dir_t dir;
+    lv_fs_dir_open(&dir, "S:/");
+    /* Scan files in storage */
+    while (true) {
+
+//        p_dirent = readdir(p_dir_stream);
+        char fn[64];
+        lv_fs_dir_read(&dir, fn);
+        printf("fn::%s\n", fn);
+        lv_obj_t * btn = NULL;
+        if ('\0' != fn[0]) {
+//            lv_obj_t *btn = lv_list_add_btn(list, LV_SYMBOL_IMAGE, p_dirent->d_name);
+            if (fn[0] == '/') {
+                btn = lv_list_add_btn(list, LV_SYMBOL_DIRECTORY, &fn[1]);
+            }
+            else {
+                btn = lv_list_add_btn(list, LV_SYMBOL_IMAGE, fn);
+            }
+            lv_group_add_obj(g_btn_op_group, btn);
+            lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, (void *) img);
+        } else {
+//            closedir(p_dir_stream);
+            lv_fs_dir_close(&dir);
+            break;
+        }
+    }
+}
+
+
+
 lv_ui guider_ui;
 void LVHandlerTask(void *pa)
 {
     lv_init();
     lv_port_disp_init();
     lv_port_fs_init();
-    setup_ui(&guider_ui);
+    lv_obj_t * img = lv_img_create(lv_scr_act());
+//    lv_img_set_src(img, "S:/bg.png");
+
+    image_display();
+//    lv_fs_file_t f;
+//    lv_res_t res;
+//    res = lv_fs_open(&f, "S:/tell5.jpg", LV_FS_MODE_RD);
+//    if (res != LV_FS_RES_OK) printf("open file error, res == %d\n", res);
+//
+//    uint32_t num;
+//    uint8_t buf[256];
+//    res = lv_fs_read(&f, buf, 20, &num);
+//
+//    printf("read %ld bytes, file %s\n", num, buf);
+//    if (num > 2)
+//        buf[num - 1] = '\0';
+//
+//    lv_fs_close(&f);
+//    setup_ui(&guider_ui)
 //    custom_init(&guider_ui);
     while (1) {
         lv_timer_handler();
