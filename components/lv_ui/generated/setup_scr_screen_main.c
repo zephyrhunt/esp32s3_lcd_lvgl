@@ -730,7 +730,7 @@ void setup_scr_screen_main(lv_ui *ui)
 
 	//Write codes screen_main_cont_app
 	ui->screen_main_cont_app = lv_obj_create(ui->screen_main);
-	lv_obj_set_pos(ui->screen_main_cont_app, 0, 205);
+	lv_obj_set_pos(ui->screen_main_cont_app, 5, 205);
 	lv_obj_set_size(ui->screen_main_cont_app, 320, 35);
 	lv_obj_set_scrollbar_mode(ui->screen_main_cont_app, LV_SCROLLBAR_MODE_OFF);
 

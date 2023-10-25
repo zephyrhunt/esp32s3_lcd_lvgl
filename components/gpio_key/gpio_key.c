@@ -43,9 +43,41 @@ uint8_t KEYC_GetKeyLevel(uint8_t id)
     return 0;
 }
 
+KEY_Dev key_up;
+KEY_Dev key_down;
+KEY_Dev key_sup;
+KEY_Dev key_smid;
+KEY_Dev key_sdown;
+
+extern void KEY_UpHandler(KEY_Event event);
+extern void KEY_DownHandler(KEY_Event event);
+extern void KEY_SUpHandler(KEY_Event event);
+extern void KEY_SDownHandler(KEY_Event event);
+extern void KEY_SMidHandler(KEY_Event event);
+
 void KEYC_Init()
 {
     KEYC_HalInit();
+    KEYC_Rigister(&key_up, KEYC_GetKeyLevel, 0, 0);
+    KEYC_Attach(&key_up, KEY_UpHandler);
+    KEYC_Start(&key_up);
+
+    KEYC_Rigister(&key_down, KEYC_GetKeyLevel, 0, 1);
+    KEYC_Attach(&key_down, KEY_DownHandler);
+    KEYC_Start(&key_down);
+
+    KEYC_Rigister(&key_sup, KEYC_GetKeyLevel, 0, 2);
+    KEYC_Attach(&key_sup, KEY_SUpHandler);
+    KEYC_Start(&key_sup);
+
+    KEYC_Rigister(&key_sdown, KEYC_GetKeyLevel, 0, 3);
+    KEYC_Attach(&key_sdown, KEY_SDownHandler);
+    KEYC_Start(&key_sdown);
+
+    KEYC_Rigister(&key_smid, KEYC_GetKeyLevel, 0, 4);
+    KEYC_Attach(&key_smid, KEY_SMidHandler);
+    KEYC_Start(&key_smid);
+
 }
 void KEYC_Rigister(KEY_Dev* key_handle, GetPinLevl pin_level, uint8_t press_level, uint8_t key_id)
 {

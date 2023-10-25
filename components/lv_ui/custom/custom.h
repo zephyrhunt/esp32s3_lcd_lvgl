@@ -15,7 +15,24 @@ extern "C" {
 
 #include "gui_guider.h"
 
+typedef struct {
+  int8_t id;
+  int8_t id_max;
+  int8_t id_min;
+  int16_t dis_x;
+}lv_cus_item_t;
+
+typedef struct {
+  int32_t time_ms;
+}lv_cus_time_t;
+
 void custom_init(lv_ui *ui);
+void lv_cus_toggle(lv_obj_t * obj);
+uint8_t lv_cus_is_display(lv_obj_t * obj);
+int8_t lv_cus_to_next(lv_cus_item_t * item);
+int8_t lv_cus_to_prev(lv_cus_item_t * item);
+void lv_cus_disp_time(lv_obj_t * obj, lv_cus_time_t * time, uint32_t time_ms);
+
 
 #ifdef __cplusplus
 }

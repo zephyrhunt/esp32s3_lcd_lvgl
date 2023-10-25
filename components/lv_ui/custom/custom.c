@@ -113,6 +113,45 @@ void lv_example_scroll_6(void)
     lv_obj_scroll_to_view(lv_obj_get_child(cont, 0), LV_ANIM_OFF);
 }
 
+void lv_cus_toggle(lv_obj_t * obj)
+{
+    if (lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN))
+        lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    else
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+}
+
+uint8_t lv_cus_is_display(lv_obj_t * obj)
+{
+    if (lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN))
+        return 0;
+    else
+        return 1;
+}
+
+int8_t lv_cus_to_next(lv_cus_item_t * item)
+{
+    item->id++;
+    if (item->id > item->id_max)
+        item->id = item->id_min; // usually 0
+
+    return item->id;
+}
+
+int8_t lv_cus_to_prev(lv_cus_item_t * item)
+{
+    item->id--;
+    if (item->id < item->id_min)
+        item->id = item->id_max;
+
+    return item->id;
+}
+
+void lv_cus_disp_time(lv_obj_t * obj, lv_cus_time_t * time, uint32_t time_ms)
+{
+    time->time_ms = time_ms;
+    lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+}
 
 void custom_init(lv_ui *ui)
 {

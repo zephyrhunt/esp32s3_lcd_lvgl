@@ -6,7 +6,7 @@
 #define KEY_TICKS_INTERVAL    5	//ms
 #define KEY_DEBOUNCE_TICKS    1	//MAX 8, 双击间隔时间
 
-#define KEY_SHORT_TICKS       (50 /KEY_TICKS_INTERVAL)
+#define KEY_SHORT_TICKS       (30 /KEY_TICKS_INTERVAL)
 #define KEY_LONG_TICKS        (300 /KEY_TICKS_INTERVAL)
 
 typedef enum {

@@ -43,6 +43,7 @@ void LVTickTask(void *par);
 void LVHandlerTask(void *pa);
 void NETTask(void *par);
 void LVUpStatusTask(void *par);
+void KeyTask(void * par);
 
 void time_sync_notification_cb(struct timeval *tv)
 {
@@ -145,14 +146,12 @@ void app_main(void)
 //    // (MCU specific Code)
 //    #endif
     xTaskCreatePinnedToCore(LVTickTask, "lv_tick_task", 4096, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(KeyTask, "key_task", 4096, NULL, 3, NULL, 1);
     xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 2, NULL, 1);
+
     xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
     xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
 
-    // it will be deleted
-//    while (1) {
-//        vTaskDelay(pdMS_TO_TICKS(50));
-//    }
 }
 
 
@@ -170,52 +169,17 @@ void NETTask(void *par)
 //    WEATHER_HttpInit();
     ntp_init();
 
-    char buf[20] = {};
-    uint16_t year = timeinfo.tm_year+1900;
-    sprintf(buf, "%4d年", year);
-    lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 0), buf);
-    sprintf(buf, "星期%1d", timeinfo.tm_wday);
-    lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 2), buf);
-    sprintf(buf, "%2d月%2d日", (timeinfo.tm_mon+1), timeinfo.tm_mday);
-    lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 3), buf);
     while (1) {
-        if (WiFi_GetConnectStatus() == 1) {
-            time(&now);
-            localtime_r(&now, &timeinfo);
-            strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-            printf("day:%d,hour:%d,min:%d,sec:%d,Mon:%d,week:%d\n", timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mon, timeinfo.tm_wday);
-            ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
-            sprintf(buf, "%2d", timeinfo.tm_hour);
-            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf);
-            sprintf(buf, "%02d", timeinfo.tm_min);
-            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 2), buf);
-            sprintf(buf, "%02d", timeinfo.tm_sec);
-            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 4), buf);
-
-            if (timeinfo.tm_sec % 2) {
-                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), ":");
-                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), ":");
-            } else {
-                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), " ");
-                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
-            }
-//            if (lv_obj_has_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), LV_OBJ_FLAG_HIDDEN))
-//            {
-//                lv_obj_clear_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), LV_OBJ_FLAG_HIDDEN);
-//                lv_obj_clear_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), LV_OBJ_FLAG_HIDDEN);
-//            }else {
-//                lv_obj_add_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), LV_OBJ_FLAG_HIDDEN);
-//                lv_obj_add_flag((lv_obj_t *) lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), LV_OBJ_FLAG_HIDDEN);
-//            }
-//            lv_label_set_text(guider_ui.screen_main_text_time, );
-        }
-//            WEATHER_HttpGet();
-
-
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
+lv_cus_item_t lv_app_cont_item = {
+    .id = 0,
+    .id_max = 4,
+    .id_min = 0,
+    .dis_x = 50
+};
 int16_t id = 0; // id in 0 to 2
 void KEY_UpHandler(KEY_Event event)
 {
@@ -224,112 +188,181 @@ void KEY_UpHandler(KEY_Event event)
         id--;
         if (id < 0)
             id = 18;
-//        lv_obj_set_tile(guider_ui.screen_tileview_1, guider_ui.screen_tileview_1_tile_1, LV_ANIM_ON);
-//        lv_obj_set_tile(guider_ui.screen_tileview_1, lv_obj_get_child(guider_ui.screen_tileview_1, id), LV_ANIM_ON);
-//        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
     }
 
 }
 
-int16_t brightness = 100;
+int16_t brightness = 50;
 void KEY_DownHandler(KEY_Event event)
 {
+    switch (event) {
+        case SINGLE_CLICK:
+            if (lv_scr_act() == guider_ui.screen_main) {
+                if (lv_cus_is_display(guider_ui.screen_main_cont_app) == 0) {
+                    lv_cus_toggle(guider_ui.screen_main_cont_app);
+                } else {
+                    switch (lv_app_cont_item.id) {
+                        case 0:lv_cus_toggle(guider_ui.screen_main_cont_app);
+                            break;
+                        case 1:break;
+                        case 2:break;
+                        case 3:
+                            lv_scr_load_anim(guider_ui.screen_setting, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+                            break;
+                        case 4:
+                            lv_cus_toggle(guider_ui.screen_main_slider_light); //修改成时间切换
+                            lv_cus_toggle(guider_ui.screen_main_cont_app);
+                            break;
+                    }
+                }
+            } else if (lv_scr_act() == guider_ui.screen_setting) {
+                lv_scr_load_anim(guider_ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            }
+            printf("k2 single click\n");
+            break;
+        default:
+            break;
+
+    }
     if (event == PRESS_DOWN) {
         id++;
         if (id > 18)
             id= 0;
         printf("k2 press down\n");
-//        lv_obj_set_tile(guider_ui.screen_tileview_1, lv_obj_get_child(guider_ui.screen_tileview_1, id), LV_ANIM_ON);
-//        lv_obj_scroll_to_view(lv_obj_get_child(cont, id), LV_ANIM_ON);
-        if (lv_obj_has_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN))
-            lv_obj_clear_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
-        else
-            lv_obj_add_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
     }
+}
+
+void lv_set_opa(lv_obj_t * obj, lv_opa_t opa)
+{
+//    lv_obj_set_style_opa(obj, opa, LV_STATE_DEFAULT);
+    if (opa <= 10)
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
 }
 
 void KEY_SUpHandler(KEY_Event event)
 {
-    if (event == PRESS_DOWN){
-        printf("k3 press down\n");
-        brightness += 20;
-        if (brightness > 255)
-            brightness = 255;
-        LCD_SetBlck(brightness);
-    } else if (event == LONG_PRESS_HOLD) {
-        brightness++;
-        if (brightness > 255)
-            brightness = 255;
-        LCD_SetBlck(brightness);
+    switch (event) {
+        case PRESS_DOWN:
+            if (lv_cus_is_display(guider_ui.screen_main_cont_app)) {
+                lv_obj_set_x(guider_ui.screen_main_btn_select, lv_cus_to_prev(&lv_app_cont_item) * lv_app_cont_item.dis_x);
+            } else{
+                brightness += 10;
+                if (brightness > 255)
+                    brightness = 255;
+                LCD_SetBlck(brightness);
+                lv_obj_clear_flag(guider_ui.screen_main_slider_light, LV_OBJ_FLAG_HIDDEN);
+                lv_anim_t a;
+                lv_anim_init(&a);
+                lv_anim_set_var(&a, guider_ui.screen_main_slider_light);
+                lv_anim_set_time(&a, 1200);
+                lv_anim_set_values(&a, 240, 0);
+                lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_set_opa);
+                lv_anim_start(&a);
+                lv_slider_set_value(guider_ui.screen_main_slider_light, brightness / 255.0f * 100, LV_ANIM_OFF);
+            }
+            printf("k3 single click\n");
+            break;
+        case DOUBLE_CLICK:
+            printf("k3 double click\n");
+            break;
+        case LONG_PRESS_HOLD:
+            printf("k3 long press hold\n");
+            break;
+        default:
+            break;
     }
 }
+
 void KEY_SDownHandler(KEY_Event event)
 {
-    if (event == PRESS_DOWN){
-        brightness -= 20;
-        if (brightness < 10)
-            brightness = 10;
-        LCD_SetBlck(brightness);
-        printf("k4 press down\n");
-    } else if (event == LONG_PRESS_HOLD) {
-        brightness --;
-        if (brightness < 10)
-            brightness = 10;
-        LCD_SetBlck(brightness);
-    }
+    switch (event) {
+        case PRESS_DOWN:
+            if (lv_cus_is_display(guider_ui.screen_main_cont_app)) {
+                lv_coord_t x = lv_cus_to_next(&lv_app_cont_item) * lv_app_cont_item.dis_x;
+                lv_obj_set_x(guider_ui.screen_main_btn_select, x);
+            } else {
+                brightness -= 10;
+                if (brightness < 10)
+                    brightness = 10;
+                LCD_SetBlck(brightness);
 
+                lv_obj_clear_flag(guider_ui.screen_main_slider_light, LV_OBJ_FLAG_HIDDEN);
+                lv_anim_t a;
+                lv_anim_init(&a);
+                lv_anim_set_var(&a, guider_ui.screen_main_slider_light);
+                lv_anim_set_time(&a, 1200);
+                lv_anim_set_values(&a, 240, 0);
+                lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_set_opa);
+                lv_anim_start(&a);
+                lv_slider_set_value(guider_ui.screen_main_slider_light, brightness / 255.0f * 100, LV_ANIM_OFF);
+
+            }
+            printf("k4 single click\n");
+            break;
+        default:
+            break;
+    }
 }
 
 void KEY_SMidHandler(KEY_Event event)
 {
-    if (event == PRESS_DOWN){
-        printf("k5 press down\n");
+    switch (event) {
+        case SINGLE_CLICK:
+            // 软件切换确认
+            switch (lv_app_cont_item.id ) {
+                case 0: // main
+                    break;
+                case 1: // picture
+                    break;
+                case 2: // reader
+                    break;
+                case 3: // setting
+                    lv_scr_load_anim(guider_ui.screen_setting, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+                    printf("k5 single click\n");
+                    break;
+                case 4:
+                    lv_cus_toggle(guider_ui.screen_main_slider_light);
+                    lv_cus_toggle(guider_ui.screen_main_cont_app);
+                default:break;
+            }
+        default:
+            break;
+
     }
 }
-KEY_Dev key_up;
-KEY_Dev key_down;
-KEY_Dev key_sup;
-KEY_Dev key_smid;
-KEY_Dev key_sdown;
+
+SemaphoreHandle_t lv_semp = NULL;
+void KeyTask(void * par)
+{
+    lv_semp = xSemaphoreCreateMutex();
+
+    KEYC_Init();
+    while (1) {
+        xSemaphoreTake(lv_semp, portMAX_DELAY);
+        static TickType_t run_times = 0;
+        run_times = xTaskGetTickCount();
+        KEYC_TickInc();
+        xSemaphoreGive(lv_semp);
+        vTaskDelay(pdMS_TO_TICKS(10));
+//        vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
+    }
+}
+
 /**
  * @brief LVGL任务，LVGL_Tick和Handle
  * @param None
  */
 void LVTickTask(void *par)
 {
-    KEYC_Init();
-    KEYC_Rigister(&key_up, KEYC_GetKeyLevel, 0, 0);
-    KEYC_Attach(&key_up, KEY_UpHandler);
-    KEYC_Start(&key_up);
-
-    KEYC_Rigister(&key_down, KEYC_GetKeyLevel, 0, 1);
-    KEYC_Attach(&key_down, KEY_DownHandler);
-    KEYC_Start(&key_down);
-
-    KEYC_Rigister(&key_sup, KEYC_GetKeyLevel, 0, 2);
-    KEYC_Attach(&key_sup, KEY_SUpHandler);
-    KEYC_Start(&key_sup);
-
-    KEYC_Rigister(&key_sdown, KEYC_GetKeyLevel, 0, 3);
-    KEYC_Attach(&key_sdown, KEY_SDownHandler);
-    KEYC_Start(&key_sdown);
-
-    KEYC_Rigister(&key_smid, KEYC_GetKeyLevel, 0, 4);
-    KEYC_Attach(&key_smid, KEY_SMidHandler);
-    KEYC_Start(&key_smid);
-
     while (1) {
         static TickType_t run_times = 0;
         run_times = xTaskGetTickCount();
-        KEYC_TickInc();
         lv_tick_inc(10);
         vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
     }
 }
 
 static lv_group_t *g_btn_op_group = NULL;
-
-
 static void btn_event_cb(lv_event_t *event)
 {
     lv_obj_t *img = (lv_obj_t *) event->user_data;
@@ -354,7 +387,6 @@ static void btn_event_cb(lv_event_t *event)
         free(file_name_with_path);
     }
 }
-
 static void image_display(void)
 {
     g_btn_op_group = lv_group_create();
@@ -390,10 +422,7 @@ static void image_display(void)
     }
 }
 
-
-
 lv_ui guider_ui;
-
 
 void LVHandlerTask(void *pa)
 {
@@ -402,12 +431,37 @@ void LVHandlerTask(void *pa)
     lv_port_fs_init();
     setup_ui(&guider_ui);
     lv_obj_add_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
+
+    vTaskDelay(pdMS_TO_TICKS(100));
 //    custom_init(&guider_ui);
     while (1) {
+        xSemaphoreTake(lv_semp, portMAX_DELAY);
+//        uint8_t buf[20];
+//        if (WiFi_GetConnectStatus() == 1) {
+//            time(&now);
+//            localtime_r(&now, &timeinfo);
+//            strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+//            printf("day:%d,hour:%d,min:%d,sec:%d,Mon:%d,week:%d\n", timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mon, timeinfo.tm_wday);
+//            ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+//            sprintf(buf, "%2d", timeinfo.tm_hour);
+//            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf);
+//            sprintf(buf, "%02d", timeinfo.tm_min);
+//            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 2), buf);
+//            sprintf(buf, "%02d", timeinfo.tm_sec);
+//            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 4), buf);
+//
+//            if (timeinfo.tm_sec % 2) {
+//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), ":");
+//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), ":");
+//            } else {
+//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), " ");
+//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
+//            }
+//        }
         lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(10));
+        xSemaphoreGive(lv_semp);
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
-
 }
 /**
  * @brief 更新状态任务，刷新UI逻辑
