@@ -17,8 +17,6 @@ extern "C" {
 
 typedef struct {
   int8_t id;
-  int8_t id_last;
-  int8_t id_next;
   int8_t id_max;
   int8_t id_min;
   int8_t is_child_focus;

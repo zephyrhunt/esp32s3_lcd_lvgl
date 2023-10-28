@@ -72,17 +72,19 @@ void WEATHER_HttpInit()
 
 
 char output_buffer[1224] = {0};
-void WEATHER_HttpGet()
+uint8_t WEATHER_HttpGet()
 {
     esp_http_client_open(client, 0);
     int64_t content_length = esp_http_client_fetch_headers(client);
     if (content_length < 0) {
         ESP_LOGE(TAG, "Fetch Failed\n");
+        return 0;
     } else {
         ESP_LOGI(TAG, "Got Content Length: %lld\n", content_length);
     }
-    esp_http_client_read(client, output_buffer, content_length);
-    ESP_LOGI(TAG, "Read content: %s\n", output_buffer);
-    parse_json_data(output_buffer);
+//    esp_http_client_read(client, output_buffer, content_length);
+//    ESP_LOGI(TAG, "Read content: %s\n", output_buffer);
+//    parse_json_data(output_buffer);
     esp_http_client_close(client);
+    return 1;
 }

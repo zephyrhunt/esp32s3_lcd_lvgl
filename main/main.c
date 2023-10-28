@@ -19,7 +19,6 @@
 
 //#include "esp_gatt_common_api.h"
 #include "ble_gatts_module.h"
-//#include "board.h"
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
@@ -27,10 +26,9 @@
 #include "sd_card.h"
 #include "lvgl.h"
 #include "time.h"
-#include "esp_netif_sntp.h"
-#include "esp_sntp.h"
-#include "esp_wifi.h"
 
+#include "esp_wifi.h"
+#include "net_time.h"
 //#include "ui.h"
 #include "gui_guider.h"
 #include "custom.h"
@@ -42,12 +40,21 @@ typedef struct {
   uint8_t is_wifi_connected;
   uint8_t is_wifi_scaining;
   uint8_t wait_wifi_list_update;
+    uint8_t wait_time_update;
+    uint8_t time_update;
+
+    uint8_t wait_weather_update; // 2h更新一次
+    uint8_t weather_update; // 2h更新一次
 }sys_status_t;
 
 sys_status_t sys_status = {
   .is_wifi_connected = 0,
   .is_wifi_scaining = 0,
-    .wait_wifi_list_update = 0
+  .wait_wifi_list_update = 0,
+  .wait_time_update = 0,
+  .time_update = 0,
+    .wait_weather_update = 0,
+    .weather_update = 0,
 };
 
 /**
@@ -60,91 +67,6 @@ void LVUpStatusTask(void *par);
 void KeyTask(void * par);
 void WIFI_ScanTask(void *p);
 
-void time_sync_notification_cb(struct timeval *tv)
-{
-    ESP_LOGI(TAG, "Notification of a time synchronization event");
-}
-
-static void print_servers(void)
-{
-    ESP_LOGI(TAG, "List of configured NTP servers:");
-
-    for (uint8_t i = 0; i < SNTP_MAX_SERVERS; ++i){
-        if (esp_sntp_getservername(i)){
-            ESP_LOGI(TAG, "server %d: %s", i, esp_sntp_getservername(i));
-        } else {
-            // we have either IPv4 or IPv6 address, let's print it
-            char buff[48];
-            ip_addr_t const *ip = esp_sntp_getserver(i);
-            if (ipaddr_ntoa_r(ip, buff, 48) != NULL)
-                ESP_LOGI(TAG, "server %d: %s", i, buff);
-        }
-    }
-}
-
-static void obtain_time(void)
-{
-    ESP_LOGI(TAG, "Initializing and starting SNTP");
-    /*
-     * This is the basic default config with one server and starting the service
-     */
-    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
-    config.sync_cb = time_sync_notification_cb;     // Note: This is only needed if we want
-
-    esp_netif_sntp_init(&config);
-    print_servers();
-
-    // wait for time to be set
-    time_t now = 0;
-    struct tm timeinfo = { 0 };
-    int retry = 0;
-    const int retry_count = 30;
-    while (esp_netif_sntp_sync_wait(200 / portTICK_PERIOD_MS) == ESP_ERR_TIMEOUT && ++retry < retry_count) {
-        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
-    }
-    time(&now);
-    localtime_r(&now, &timeinfo);
-
-//    ESP_ERROR_CHECK( example_disconnect() );
-    esp_netif_sntp_deinit();
-}
-
-time_t now;
-struct tm timeinfo;
-char strftime_buf[64];
-void ntp_init()
-{
-    time(&now);
-    localtime_r(&now, &timeinfo);
-    // Is time set? If not, tm_year will be (1970 - 1900).
-    if (timeinfo.tm_year < (2016 - 1900)) {
-        ESP_LOGI(TAG, "Time is not set yet. Connecting to WiFi and getting time over NTP.");
-        obtain_time();
-        // update 'now' variable with current time
-        time(&now);
-    }
-    // Set timezone to China Standard Time
-    setenv("TZ", "CST-8", 1);
-    tzset();
-    localtime_r(&now, &timeinfo);
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
-
-    if (sntp_get_sync_mode() == SNTP_SYNC_MODE_SMOOTH) {
-        struct timeval outdelta;
-        while (sntp_get_sync_status() == SNTP_SYNC_STATUS_IN_PROGRESS) {
-            adjtime(NULL, &outdelta);
-            ESP_LOGI(TAG, "Waiting for adjusting time ... outdelta = %jd sec: %li ms: %li us",
-                     (intmax_t)outdelta.tv_sec,
-                     outdelta.tv_usec/1000,
-                     outdelta.tv_usec%1000);
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
-        }
-    }
-    const int deep_sleep_sec = 10;
-    ESP_LOGI(TAG, "Entering deep sleep for %d seconds", deep_sleep_sec);
-//    esp_deep_sleep(1000000LL * deep_sleep_sec);
-}
 /**
  * @brief 主函数，初始化其他任务，完成后删除
  */
@@ -157,21 +79,15 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-//    #ifndef LV_USE_GUIDER_SIMULATOR // or LV_USE_GUIDER_SIMULATOR == 0...
-//    // (MCU specific Code)
-//    #endif
     xTaskCreatePinnedToCore(LVTickTask, "lv_tick_task", 4096, NULL, 5, NULL, 1);
     xTaskCreatePinnedToCore(KeyTask, "key_task", 4096, NULL, 4, NULL, 1);
     xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 3, NULL, 1);
-//    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, , NULL, 1);
 
-    xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 2, NULL, 0);
+    xTaskCreatePinnedToCore(NETTask, "net_task", 8192, NULL, 2, NULL, 0);
     xTaskCreatePinnedToCore(WIFI_ScanTask, "wifi_scan_task", 4096, NULL, 6, NULL, 0); //scan 不要被打断
 
 }
 
-
-extern WeatherInfo_t weather_info;
 
 lv_cus_item_t lv_cus_wifi_item = {
     .id = 0,
@@ -184,12 +100,13 @@ extern char wifi_ssid[20][40];
 SemaphoreHandle_t scan_semp = NULL;
 void WIFI_ScanTask(void *p)
 {
-    WIFI_StaInit();
+    WIFI_StaInit(); // 开机默认去找FLASH
     scan_semp = xSemaphoreCreateBinary();
     while (1) {
         xSemaphoreTake(scan_semp, portMAX_DELAY);
         sys_status.is_wifi_scaining = 1;
         uint16_t num = WIFI_Scan(); //scan的时候不能stop
+        if(num == 0) num = 1;
         lv_obj_clean(guider_ui.screen_setting_list_wifi);
         lv_cus_wifi_item.id_max = num - 1;
         lv_cus_wifi_item.is_child_focus = 1;
@@ -216,10 +133,26 @@ extern lv_obj_t * cont;
  */
 void NETTask(void *par)
 {
-//    ble_init();
     WEATHER_HttpInit();
-//    ntp_init();
     while (1) {
+        if (sys_status.wait_time_update) {
+            uint8_t is_update = SNTP_TimeUpdate();
+            if (is_update) {
+                sys_status.wait_time_update = 0;
+                sys_status.time_update = 1;
+            }
+        }
+
+        if (sys_status.is_wifi_connected) {
+//             WEATHER_HttpGet();
+        }
+//        if (sys_status.wait_weather_update) {
+//            uint8_t is_update = WEATHER_HttpGet();
+//            if (is_update) {
+//                sys_status.wait_weather_update = 0;
+//                sys_status.weather_update = 1;
+//            }
+//        }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -334,14 +267,12 @@ void KEY_DownHandler(KEY_Event event)
                             } else {
                                 // wifi connect
                                 if (sys_status.is_wifi_connected == 0) {
-//                                    char ssid;
+                                    char *ssid = wifi_ssid[lv_cus_wifi_item.id];
 //                                    strcpy(ssid, wifi_ssid[lv_cus_wifi_item.id]);
-                                    wifi_config_t wifi_config = {
-                                        .sta = {
-                                            .ssid = "OnePlus Lcj",
-                                            .password = "123456788"
-                                        },
-                                    };
+                                    wifi_config_t wifi_config = { };
+//                                    strcpy(wifi_config.sta.password,"123456788");
+                                    memcpy(wifi_config.sta.ssid, ssid, strlen(ssid));
+                                    memcpy(wifi_config.sta.password, "123456788", 10);
                                     esp_err_t  err;
                                     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
                                     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
@@ -350,9 +281,14 @@ void KEY_DownHandler(KEY_Event event)
                                     if (err == ESP_OK) {
                                         ESP_LOGI(TAG, "wifi connect success");
                                         sys_status.is_wifi_connected = 1;
+                                        lv_obj_t * item = lv_obj_get_child(guider_ui.screen_setting_list_wifi, lv_cus_wifi_item.id);
+                                        lv_obj_set_style_bg_color(item, lv_color_hex(0xffff00), LV_PART_MAIN|LV_STATE_FOCUSED);
+                                        lv_cus_wifi_item.is_child_focus = 0;
+                                        sys_status.wait_time_update = 1;
                                     } else {
                                         ESP_LOGI(TAG, "wifi connect failed");
                                         sys_status.is_wifi_connected = 0;
+                                        sys_status.wait_time_update = 0;
                                     }
                                 }
 
@@ -564,31 +500,14 @@ void LVHandlerTask(void *pa)
     lv_obj_del(guider_ui.screen_setting_list_wifi_item0);
 
     vTaskDelay(pdMS_TO_TICKS(100));
-//    custom_init(&guider_ui);
+    static uint32_t run_times = 0; // 40ms左右
     while (1) {
         xSemaphoreTake(lv_semp, portMAX_DELAY);
-//        uint8_t buf[20];
-//        if (WiFi_GetConnectStatus() == 1) {
-//            time(&now);
-//            localtime_r(&now, &timeinfo);
-//            strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-//            printf("day:%d,hour:%d,min:%d,sec:%d,Mon:%d,week:%d\n", timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mon, timeinfo.tm_wday);
-//            ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
-//            sprintf(buf, "%2d", timeinfo.tm_hour);
-//            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf);
-//            sprintf(buf, "%02d", timeinfo.tm_min);
-//            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 2), buf);
-//            sprintf(buf, "%02d", timeinfo.tm_sec);
-//            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 4), buf);
-//
-//            if (timeinfo.tm_sec % 2) {
-//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), ":");
-//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), ":");
-//            } else {
-//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 1), " ");
-//                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
-//            }
-//        }
+        char buf[20];
+        if (sys_status.is_wifi_connected) {
+
+        }
+
         static int i = 0;
         if (sys_status.wait_wifi_list_update == 1) {
             WIFI_ListAdd(i);
@@ -607,6 +526,29 @@ void LVHandlerTask(void *pa)
             i++;
         }
 
+        if (sys_status.time_update == 1) {
+            time(&now);
+            localtime_r(&now, &timeinfo);
+//            printf("day:%d,hour:%d,min:%d,sec:%d,Mon:%d,week:%d\n", timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mon, timeinfo.tm_wday);
+            sprintf(buf, "%2d", timeinfo.tm_hour);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf);
+            sprintf(buf, "%02d", timeinfo.tm_min);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 2), buf);
+            sprintf(buf, "%02d", timeinfo.tm_sec);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 4), buf);
+
+            if (timeinfo.tm_sec % 2) {
+                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), ":");
+            } else {
+                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
+            }
+        }
+
+        if (sys_status.weather_update == 1) {
+
+        }
+
+        run_times++;
         lv_timer_handler();
         xSemaphoreGive(lv_semp);
         vTaskDelay(pdMS_TO_TICKS(20));

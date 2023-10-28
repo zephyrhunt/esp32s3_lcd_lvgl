@@ -138,19 +138,19 @@ void lv_cus_focus_now(lv_obj_t *obj, lv_cus_item_t * item)
 void lv_cus_focus_next(lv_obj_t *obj, lv_cus_item_t * item)
 {
     int8_t id_pre = item->id;
-    lv_obj_t *child = lv_obj_get_child(obj, lv_cus_to_next(item));
-    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
     lv_obj_t *last_child = lv_obj_get_child(obj, id_pre);
     lv_event_send(last_child, LV_EVENT_DEFOCUSED, NULL);
+    lv_obj_t *child = lv_obj_get_child(obj, lv_cus_to_next(item));
+    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
 }
 
 void lv_cus_focus_prev(lv_obj_t *obj, lv_cus_item_t * item)
 {
     int8_t id_pre = item->id;
-    lv_obj_t *child = lv_obj_get_child(obj, lv_cus_to_prev(item));
-    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
     lv_obj_t *last_child = lv_obj_get_child(obj, id_pre);
     lv_event_send(last_child, LV_EVENT_DEFOCUSED, NULL);
+    lv_obj_t *child = lv_obj_get_child(obj, lv_cus_to_prev(item));
+    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
 }
 
 void lv_cus_focus_none(lv_obj_t *obj, lv_cus_item_t * item)
@@ -166,7 +166,6 @@ void lv_cus_clear(lv_obj_t * obj)
 }
 int8_t lv_cus_to_next(lv_cus_item_t * item)
 {
-    item->id_last = item->id;
     item->id++;
     if (item->id > item->id_max)
         item->id = item->id_min; // usually 0
@@ -176,7 +175,6 @@ int8_t lv_cus_to_next(lv_cus_item_t * item)
 
 int8_t lv_cus_to_prev(lv_cus_item_t * item)
 {
-    item->id_next = item->id;
     item->id--;
     if (item->id < item->id_min)
         item->id = item->id_max;
