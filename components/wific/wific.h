@@ -4,6 +4,6 @@
 #include "stdint.h"
 void WIFI_StaInit(void);
 uint8_t WIFI_GetConnectStatus();
-void WIFI_Scan(void);
+uint16_t WIFI_Scan(void);
 
 #endif

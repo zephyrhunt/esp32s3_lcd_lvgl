@@ -160,6 +160,10 @@ void lv_cus_focus_none(lv_obj_t *obj, lv_cus_item_t * item)
     lv_event_send(child, LV_EVENT_DEFOCUSED, NULL);
 }
 
+void lv_cus_clear(lv_obj_t * obj)
+{
+    lv_obj_clean(obj);
+}
 int8_t lv_cus_to_next(lv_cus_item_t * item)
 {
     item->id_last = item->id;

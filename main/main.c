@@ -29,6 +29,7 @@
 #include "time.h"
 #include "esp_netif_sntp.h"
 #include "esp_sntp.h"
+#include "esp_wifi.h"
 
 //#include "ui.h"
 #include "gui_guider.h"
@@ -36,6 +37,19 @@
 #define TAG "main"
 
 #include "dirent.h"
+
+typedef struct {
+  uint8_t is_wifi_connected;
+  uint8_t is_wifi_scaining;
+  uint8_t wait_wifi_list_update;
+}sys_status_t;
+
+sys_status_t sys_status = {
+  .is_wifi_connected = 0,
+  .is_wifi_scaining = 0,
+    .wait_wifi_list_update = 0
+};
+
 /**
  * @brief 任务列表
  */
@@ -44,6 +58,7 @@ void LVHandlerTask(void *pa);
 void NETTask(void *par);
 void LVUpStatusTask(void *par);
 void KeyTask(void * par);
+void WIFI_ScanTask(void *p);
 
 void time_sync_notification_cb(struct timeval *tv)
 {
@@ -146,16 +161,53 @@ void app_main(void)
 //    // (MCU specific Code)
 //    #endif
     xTaskCreatePinnedToCore(LVTickTask, "lv_tick_task", 4096, NULL, 5, NULL, 1);
-    xTaskCreatePinnedToCore(KeyTask, "key_task", 4096, NULL, 3, NULL, 1);
-    xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 2, NULL, 1);
+    xTaskCreatePinnedToCore(KeyTask, "key_task", 4096, NULL, 4, NULL, 1);
+    xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 3, NULL, 1);
+//    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, , NULL, 1);
 
-    xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
-    xTaskCreatePinnedToCore(NETTask, "net_task", 8192, NULL, 3, NULL, 0);
+    xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 2, NULL, 0);
+    xTaskCreatePinnedToCore(WIFI_ScanTask, "wifi_scan_task", 4096, NULL, 6, NULL, 0); //scan 不要被打断
 
 }
 
 
 extern WeatherInfo_t weather_info;
+
+lv_cus_item_t lv_cus_wifi_item = {
+    .id = 0,
+    .id_max = 1,
+    .id_min = 0,
+    .is_child_focus = 0
+};
+
+extern char wifi_ssid[20][40];
+SemaphoreHandle_t scan_semp = NULL;
+void WIFI_ScanTask(void *p)
+{
+    WIFI_StaInit();
+    scan_semp = xSemaphoreCreateBinary();
+    while (1) {
+        xSemaphoreTake(scan_semp, portMAX_DELAY);
+        sys_status.is_wifi_scaining = 1;
+        uint16_t num = WIFI_Scan(); //scan的时候不能stop
+        lv_obj_clean(guider_ui.screen_setting_list_wifi);
+        lv_cus_wifi_item.id_max = num - 1;
+        lv_cus_wifi_item.is_child_focus = 1;
+        sys_status.is_wifi_scaining = 0;
+        sys_status.wait_wifi_list_update = 1;
+    }
+}
+
+void WIFI_ListAdd(uint8_t id)
+{
+    lv_style_t style;
+    lv_style_set_bg_color(&style, lv_color_hex(0xd49292));
+
+    lv_obj_t *btn = lv_list_add_btn(guider_ui.screen_setting_list_wifi, NULL, wifi_ssid[id]);
+    lv_obj_add_style(btn, &style, LV_PART_MAIN|LV_STATE_FOCUSED);
+    lv_group_remove_obj(btn);
+
+}
 
 extern lv_obj_t * cont;
 /**
@@ -165,10 +217,8 @@ extern lv_obj_t * cont;
 void NETTask(void *par)
 {
 //    ble_init();
-    WIFI_StaInit();
     WEATHER_HttpInit();
 //    ntp_init();
-
     while (1) {
 
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -210,8 +260,13 @@ void KEY_UpHandler(KEY_Event event)
                 if (lv_cus_tile_set.is_child_focus == 0)
                     lv_scr_load_anim(guider_ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
                 else {
-                    lv_obj_set_tile(guider_ui.screen_setting_tileview_setting, guider_ui.screen_setting_tileview_setting_tile_main, LV_ANIM_ON);
-                    lv_cus_tile_set.is_child_focus = 0;
+                    if (lv_cus_wifi_item.is_child_focus == 1) {
+                        lv_cus_focus_none(guider_ui.screen_setting_list_wifi, &lv_cus_wifi_item);
+                        lv_cus_wifi_item.is_child_focus = 0;
+                    } else {
+                        lv_obj_set_tile(guider_ui.screen_setting_tileview_setting, guider_ui.screen_setting_tileview_setting_tile_main, LV_ANIM_ON);
+                        lv_cus_tile_set.is_child_focus = 0;
+                    }
                 }
             } else if (lv_scr_act() == guider_ui.screen_image) {
                 lv_scr_load_anim(guider_ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
@@ -261,13 +316,46 @@ void KEY_DownHandler(KEY_Event event)
                 } else {
                     switch (lv_cus_tile_set.id) {
                         case 1:
-                            if (lv_obj_has_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED)){
-                                lv_obj_clear_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED);
-                            }
-                            else {
-                                lv_obj_add_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED);
-                                WIFI_Scan(); //添加到后台任务扫描
-                                // scan once
+                            if (lv_cus_wifi_item.is_child_focus == 0) {
+                                if (lv_obj_has_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED)){
+                                    lv_obj_clear_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED);
+                                    if (sys_status.is_wifi_scaining == 0) {
+                                        esp_wifi_stop(); // 扫描的时候不能关闭
+                                        lv_obj_clean(guider_ui.screen_setting_list_wifi);
+                                        lv_cus_wifi_item.is_child_focus = 0;
+                                        sys_status.is_wifi_connected = 0;
+                                    }
+                                }
+                                else {
+                                    lv_obj_add_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED);
+                                    lv_list_add_btn(guider_ui.screen_setting_list_wifi, NULL, "WIFI IS Scanning.........");
+                                    xSemaphoreGive(scan_semp); // scan once cant stop
+                                }
+                            } else {
+                                // wifi connect
+                                if (sys_status.is_wifi_connected == 0) {
+//                                    char ssid;
+//                                    strcpy(ssid, wifi_ssid[lv_cus_wifi_item.id]);
+                                    wifi_config_t wifi_config = {
+                                        .sta = {
+                                            .ssid = "OnePlus Lcj",
+                                            .password = "123456788"
+                                        },
+                                    };
+                                    esp_err_t  err;
+                                    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+                                    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+                                    err = esp_wifi_connect();
+                                    // 尝试连接
+                                    if (err == ESP_OK) {
+                                        ESP_LOGI(TAG, "wifi connect success");
+                                        sys_status.is_wifi_connected = 1;
+                                    } else {
+                                        ESP_LOGI(TAG, "wifi connect failed");
+                                        sys_status.is_wifi_connected = 0;
+                                    }
+                                }
+
                             }
                             break;
                         case 2:break;
@@ -304,7 +392,8 @@ void KEY_SUpHandler(KEY_Event event)
                 if (lv_cus_tile_set.is_child_focus == 0) {
                     lv_cus_focus_prev(guider_ui.screen_setting_list_setting, &lv_cus_list_main);
                 } else {
-
+                    if (lv_cus_wifi_item.is_child_focus == 1)
+                        lv_cus_focus_prev(guider_ui.screen_setting_list_wifi, &lv_cus_wifi_item);
                 }
             }
             break;
@@ -333,6 +422,8 @@ void KEY_SDownHandler(KEY_Event event)
                 if (lv_cus_tile_set.is_child_focus == 0) {
                     lv_cus_focus_next(guider_ui.screen_setting_list_setting, &lv_cus_list_main);
                 } else {
+                    if (lv_cus_wifi_item.is_child_focus == 1)
+                        lv_cus_focus_next(guider_ui.screen_setting_list_wifi, &lv_cus_wifi_item);
                 }
             }
             printf("k4 single click\n");
@@ -470,6 +561,7 @@ void LVHandlerTask(void *pa)
     setup_scr_screen_setting(&guider_ui);
     lv_obj_add_flag(guider_ui.screen_main_list_musics, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_del(guider_ui.screen_setting_list_wifi_item0);
 
     vTaskDelay(pdMS_TO_TICKS(100));
 //    custom_init(&guider_ui);
@@ -497,6 +589,24 @@ void LVHandlerTask(void *pa)
 //                lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
 //            }
 //        }
+        static int i = 0;
+        if (sys_status.wait_wifi_list_update == 1) {
+            WIFI_ListAdd(i);
+
+            if (sys_status.wait_wifi_list_update == 1) {
+                lv_cus_wifi_item.id = 0;
+                lv_cus_focus_now(guider_ui.screen_setting_list_wifi, &lv_cus_wifi_item); //不要发送event，发送event和建立冲突
+                lv_cus_wifi_item.is_child_focus = 1;
+            }
+            if (i == lv_cus_wifi_item.id_max) {
+                lv_cus_wifi_item.id = 0;
+                lv_cus_focus_now(guider_ui.screen_setting_list_wifi, &lv_cus_wifi_item);
+                sys_status.wait_wifi_list_update = 0;
+                i = -1;
+            }
+            i++;
+        }
+
         lv_timer_handler();
         xSemaphoreGive(lv_semp);
         vTaskDelay(pdMS_TO_TICKS(20));

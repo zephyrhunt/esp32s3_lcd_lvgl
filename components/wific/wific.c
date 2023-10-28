@@ -38,32 +38,37 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-wifi_ap_record_t ap_info[20];
-char wifi_ssid[20][33];
+wifi_ap_record_t ap_info[20]; // 20 MAX
+char wifi_ssid[20][40];
 /* Initialize Wi-Fi as sta and set scan method */
-void WIFI_Scan(void)
+uint16_t WIFI_Scan(void)
 {
     uint16_t number = 20;
     uint16_t ap_count = 0;
-//    memset(ap_info, 0, sizeof(ap_info));
+    memset(wifi_ssid, 0, sizeof(wifi_ssid));
+    memset(ap_info, 0, sizeof(ap_info));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
 
-    esp_wifi_scan_start(NULL, true);
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
-    ESP_LOGI(TAG, "Total APs scanned = %u", ap_count);
+    ESP_LOGI(TAG, "Total APs scanned = %u", ap_count); // all
+    if (ap_count > 20) ap_count = 20;
     for (int i = 0; (i < 20) && (i < ap_count); i++) {
         strcpy(wifi_ssid[i], (char *)ap_info[i].ssid);
-
         ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
-        ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
-        ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
+//        ESP_LOGI(TAG, "SSID \t\t%s", wifi_ssid[i]);
+//        ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
+//        ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
     }
+    return ap_count;
 }
 
 void WIFI_Connect(char * ssid)
 {
 
 }
+
 void WIFI_StaInit(void)
 {
     s_wifi_event_group = xEventGroupCreate();
@@ -96,7 +101,7 @@ void WIFI_StaInit(void)
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
 //    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-    ESP_ERROR_CHECK(esp_wifi_start() );
+//    ESP_ERROR_CHECK(esp_wifi_start() );
 
     ESP_LOGI(TAG, "WIFI_StaInit finished.");
 
