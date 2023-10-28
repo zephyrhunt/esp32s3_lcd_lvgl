@@ -150,7 +150,7 @@ void app_main(void)
     xTaskCreatePinnedToCore(LVHandlerTask, "lv_handler", 4096, NULL, 2, NULL, 1);
 
     xTaskCreatePinnedToCore(LVUpStatusTask, "lv_update_task", 4096, NULL, 4, NULL, 1);
-    xTaskCreatePinnedToCore(NETTask, "net_task", 4096, NULL, 3, NULL, 0);
+    xTaskCreatePinnedToCore(NETTask, "net_task", 8192, NULL, 3, NULL, 0);
 
 }
 
@@ -166,30 +166,62 @@ void NETTask(void *par)
 {
 //    ble_init();
     WIFI_StaInit();
-//    WEATHER_HttpInit();
-    ntp_init();
+    WEATHER_HttpInit();
+//    ntp_init();
 
     while (1) {
+
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
-lv_cus_item_t lv_app_cont_item = {
-    .id = 0,
-    .id_max = 4,
-    .id_min = 0,
-    .dis_x = 50
+// 0是btn selected
+lv_cus_item_t lv_cus_cont_item = {
+    .id = 1,
+    .id_max = 5,
+    .id_min = 1,
+    .is_child_focus = 0
 };
-int16_t id = 0; // id in 0 to 2
+
+lv_cus_item_t lv_cus_tile_set = {
+    .id = 0,
+    .id_max = 3,
+    .id_min = 0,
+    .is_child_focus = 0 //是否在子项目下
+};
+
+lv_cus_item_t lv_cus_list_main = {
+    .id = 0,
+    .id_max = 3,
+    .id_min = 0,
+    .is_child_focus = 0
+};
+
+
+// back
 void KEY_UpHandler(KEY_Event event)
 {
-    if (event == PRESS_DOWN){
-        printf("k1 press down\n");
-        id--;
-        if (id < 0)
-            id = 18;
-    }
+    switch (event) {
+        case SINGLE_CLICK:
+            if (lv_scr_act() == guider_ui.screen_main) {
+                if (lv_cus_is_display(guider_ui.screen_main_cont_app) == 1)
+                    lv_cus_toggle(guider_ui.screen_main_cont_app);
+            } else if (lv_scr_act() == guider_ui.screen_setting) {
+                if (lv_cus_tile_set.is_child_focus == 0)
+                    lv_scr_load_anim(guider_ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+                else {
+                    lv_obj_set_tile(guider_ui.screen_setting_tileview_setting, guider_ui.screen_setting_tileview_setting_tile_main, LV_ANIM_ON);
+                    lv_cus_tile_set.is_child_focus = 0;
+                }
+            } else if (lv_scr_act() == guider_ui.screen_image) {
+                lv_scr_load_anim(guider_ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+            }
 
+            break;
+        default:
+            break;
+
+    }
 }
 
 int16_t brightness = 50;
@@ -201,72 +233,80 @@ void KEY_DownHandler(KEY_Event event)
                 if (lv_cus_is_display(guider_ui.screen_main_cont_app) == 0) {
                     lv_cus_toggle(guider_ui.screen_main_cont_app);
                 } else {
-                    switch (lv_app_cont_item.id) {
-                        case 0:lv_cus_toggle(guider_ui.screen_main_cont_app);
+                    switch (lv_cus_cont_item.id) {
+                        case 1:lv_cus_toggle(guider_ui.screen_main_cont_app);
                             break;
-                        case 1:break;
-                        case 2:break;
-                        case 3:
-                            lv_scr_load_anim(guider_ui.screen_setting, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+                        case 2:
+                            lv_scr_load_anim(guider_ui.screen_image, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
                             break;
+                        case 3:break;
                         case 4:
-                            lv_cus_toggle(guider_ui.screen_main_slider_light); //修改成时间切换
+                            lv_scr_load_anim(guider_ui.screen_setting, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+                            lv_cus_focus_now(guider_ui.screen_setting_list_setting, &lv_cus_list_main);
+                            lv_cus_tile_set.is_child_focus = 0; // focus main
+                            break;
+                        case 5:
+                            lv_cus_disp_time(guider_ui.screen_main_slider_light, 1500);
                             lv_cus_toggle(guider_ui.screen_main_cont_app);
                             break;
                     }
                 }
             } else if (lv_scr_act() == guider_ui.screen_setting) {
-                lv_scr_load_anim(guider_ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
+                if (lv_cus_tile_set.is_child_focus == 0) {
+                    int8_t id = lv_cus_list_main.id + 1;
+                    lv_obj_set_tile(guider_ui.screen_setting_tileview_setting, lv_obj_get_child(guider_ui.screen_setting_tileview_setting, id), LV_ANIM_ON);
+                    lv_cus_tile_set.is_child_focus = 1;
+                    lv_cus_tile_set.id = id;
+                    // get child id
+                } else {
+                    switch (lv_cus_tile_set.id) {
+                        case 1:
+                            if (lv_obj_has_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED)){
+                                lv_obj_clear_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED);
+                            }
+                            else {
+                                lv_obj_add_state(guider_ui.screen_setting_sw_wifi, LV_STATE_CHECKED);
+                                WIFI_Scan(); //添加到后台任务扫描
+                                // scan once
+                            }
+                            break;
+                        case 2:break;
+                        case 3:break;
+                        default:break;
+
+                    }
+                }
             }
-            printf("k2 single click\n");
             break;
         default:
             break;
 
     }
-    if (event == PRESS_DOWN) {
-        id++;
-        if (id > 18)
-            id= 0;
-        printf("k2 press down\n");
-    }
-}
-
-void lv_set_opa(lv_obj_t * obj, lv_opa_t opa)
-{
-//    lv_obj_set_style_opa(obj, opa, LV_STATE_DEFAULT);
-    if (opa <= 10)
-        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
 }
 
 void KEY_SUpHandler(KEY_Event event)
 {
     switch (event) {
         case PRESS_DOWN:
-            if (lv_cus_is_display(guider_ui.screen_main_cont_app)) {
-                lv_obj_set_x(guider_ui.screen_main_btn_select, lv_cus_to_prev(&lv_app_cont_item) * lv_app_cont_item.dis_x);
-            } else{
-                brightness += 10;
-                if (brightness > 255)
-                    brightness = 255;
-                LCD_SetBlck(brightness);
-                lv_obj_clear_flag(guider_ui.screen_main_slider_light, LV_OBJ_FLAG_HIDDEN);
-                lv_anim_t a;
-                lv_anim_init(&a);
-                lv_anim_set_var(&a, guider_ui.screen_main_slider_light);
-                lv_anim_set_time(&a, 1200);
-                lv_anim_set_values(&a, 240, 0);
-                lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_set_opa);
-                lv_anim_start(&a);
-                lv_slider_set_value(guider_ui.screen_main_slider_light, brightness / 255.0f * 100, LV_ANIM_OFF);
+            if (lv_scr_act() == guider_ui.screen_main) {
+                if (lv_cus_is_display(guider_ui.screen_main_cont_app)) {
+                    lv_coord_t x = lv_obj_get_x(lv_obj_get_child(guider_ui.screen_main_cont_app, lv_cus_to_prev(&lv_cus_cont_item))) - 2;
+                    lv_cus_set_x(guider_ui.screen_main_btn_select, x);
+                } else{
+                    brightness += 10;
+                    if (brightness > 100)
+                        brightness = 100;
+                    LCD_SetBlck(brightness);
+                    lv_cus_disp_time(guider_ui.screen_main_slider_light, 1500);
+                    lv_slider_set_value(guider_ui.screen_main_slider_light, brightness, LV_ANIM_ON);
+                }
+            } else if (lv_scr_act() == guider_ui.screen_setting) {
+                if (lv_cus_tile_set.is_child_focus == 0) {
+                    lv_cus_focus_prev(guider_ui.screen_setting_list_setting, &lv_cus_list_main);
+                } else {
+
+                }
             }
-            printf("k3 single click\n");
-            break;
-        case DOUBLE_CLICK:
-            printf("k3 double click\n");
-            break;
-        case LONG_PRESS_HOLD:
-            printf("k3 long press hold\n");
             break;
         default:
             break;
@@ -277,25 +317,23 @@ void KEY_SDownHandler(KEY_Event event)
 {
     switch (event) {
         case PRESS_DOWN:
-            if (lv_cus_is_display(guider_ui.screen_main_cont_app)) {
-                lv_coord_t x = lv_cus_to_next(&lv_app_cont_item) * lv_app_cont_item.dis_x;
-                lv_obj_set_x(guider_ui.screen_main_btn_select, x);
-            } else {
-                brightness -= 10;
-                if (brightness < 10)
-                    brightness = 10;
-                LCD_SetBlck(brightness);
-
-                lv_obj_clear_flag(guider_ui.screen_main_slider_light, LV_OBJ_FLAG_HIDDEN);
-                lv_anim_t a;
-                lv_anim_init(&a);
-                lv_anim_set_var(&a, guider_ui.screen_main_slider_light);
-                lv_anim_set_time(&a, 1200);
-                lv_anim_set_values(&a, 240, 0);
-                lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_set_opa);
-                lv_anim_start(&a);
-                lv_slider_set_value(guider_ui.screen_main_slider_light, brightness / 255.0f * 100, LV_ANIM_OFF);
-
+            if (lv_scr_act() == guider_ui.screen_main) {
+                if (lv_cus_is_display(guider_ui.screen_main_cont_app)) {
+                    lv_coord_t x = lv_obj_get_x(lv_obj_get_child(guider_ui.screen_main_cont_app, lv_cus_to_next(&lv_cus_cont_item))) - 2;
+                    lv_cus_set_x(guider_ui.screen_main_btn_select, x);
+                } else {
+                    brightness -= 10;
+                    if (brightness < 0)
+                        brightness = 0;
+                    LCD_SetBlck(brightness);
+                    lv_cus_disp_time(guider_ui.screen_main_slider_light, 1500);
+                    lv_slider_set_value(guider_ui.screen_main_slider_light, brightness, LV_ANIM_ON);
+                }
+            } else if (lv_scr_act() == guider_ui.screen_setting) {
+                if (lv_cus_tile_set.is_child_focus == 0) {
+                    lv_cus_focus_next(guider_ui.screen_setting_list_setting, &lv_cus_list_main);
+                } else {
+                }
             }
             printf("k4 single click\n");
             break;
@@ -309,19 +347,18 @@ void KEY_SMidHandler(KEY_Event event)
     switch (event) {
         case SINGLE_CLICK:
             // 软件切换确认
-            switch (lv_app_cont_item.id ) {
-                case 0: // main
+            switch (lv_cus_cont_item.id ) {
+                case 1: // main
                     break;
-                case 1: // picture
+                case 2: // picture
+                    lv_scr_load_anim(guider_ui.screen_image, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
                     break;
-                case 2: // reader
+                case 3: // reader
                     break;
-                case 3: // setting
+                case 4: // setting
                     lv_scr_load_anim(guider_ui.screen_setting, LV_SCR_LOAD_ANIM_NONE, 10, 0, false);
-                    printf("k5 single click\n");
                     break;
-                case 4:
-                    lv_cus_toggle(guider_ui.screen_main_slider_light);
+                case 5:
                     lv_cus_toggle(guider_ui.screen_main_cont_app);
                 default:break;
             }
@@ -391,7 +428,6 @@ static void image_display(void)
 {
     g_btn_op_group = lv_group_create();
 
-
     lv_obj_t *list = lv_list_create(lv_scr_act());
     lv_obj_set_size(list, 170, 220);
     lv_obj_set_style_border_width(list, 0, LV_STATE_DEFAULT);
@@ -430,6 +466,9 @@ void LVHandlerTask(void *pa)
     lv_port_disp_init();
     lv_port_fs_init();
     setup_ui(&guider_ui);
+    setup_scr_screen_image(&guider_ui);
+    setup_scr_screen_setting(&guider_ui);
+    lv_obj_add_flag(guider_ui.screen_main_list_musics, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(guider_ui.screen_main_cont_app, LV_OBJ_FLAG_HIDDEN);
 
     vTaskDelay(pdMS_TO_TICKS(100));

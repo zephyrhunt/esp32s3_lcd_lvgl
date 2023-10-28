@@ -43,7 +43,7 @@ void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
 #define LEDC_MODE               LEDC_LOW_SPEED_MODE
 #define LEDC_OUTPUT_IO          (PIN_NUM_BCKL) // Define the output GPIO
 #define LEDC_CHANNEL            LEDC_CHANNEL_0
-#define LEDC_DUTY_RES           LEDC_TIMER_8_BIT // Set duty resolution to 13 bits
+#define LEDC_DUTY_RES           LEDC_TIMER_7_BIT // Set duty resolution to 13 bits
 #define LEDC_DUTY               (128) // Set duty to 50%. ((2 ** 8) - 1) * 50% = 128
 #define LEDC_FREQUENCY          (5000) // Frequency in Hertz. Set frequency at 5 kHz
 
@@ -76,7 +76,14 @@ static void LCD_BCKLInit(void)
 
 void LCD_SetBlck(uint8_t brightness)
 {
+    brightness += 20;
     ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, brightness);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+}
+
+void LCD_Off()
+{
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 }
 

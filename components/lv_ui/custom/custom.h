@@ -17,9 +17,11 @@ extern "C" {
 
 typedef struct {
   int8_t id;
+  int8_t id_last;
+  int8_t id_next;
   int8_t id_max;
   int8_t id_min;
-  int16_t dis_x;
+  int8_t is_child_focus;
 }lv_cus_item_t;
 
 typedef struct {
@@ -31,7 +33,13 @@ void lv_cus_toggle(lv_obj_t * obj);
 uint8_t lv_cus_is_display(lv_obj_t * obj);
 int8_t lv_cus_to_next(lv_cus_item_t * item);
 int8_t lv_cus_to_prev(lv_cus_item_t * item);
-void lv_cus_disp_time(lv_obj_t * obj, lv_cus_time_t * time, uint32_t time_ms);
+void lv_cus_disp_time(lv_obj_t * obj, uint32_t time_ms);
+void lv_cus_set_x(lv_obj_t *obj, uint16_t x);
+
+void lv_cus_focus_now(lv_obj_t *obj, lv_cus_item_t * item);
+void lv_cus_focus_next(lv_obj_t *obj, lv_cus_item_t * item);
+void lv_cus_focus_prev(lv_obj_t *obj, lv_cus_item_t * item);
+void lv_cus_focus_none(lv_obj_t *obj, lv_cus_item_t * item);
 
 
 #ifdef __cplusplus

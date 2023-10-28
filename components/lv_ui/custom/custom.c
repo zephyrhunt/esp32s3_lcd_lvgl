@@ -129,8 +129,40 @@ uint8_t lv_cus_is_display(lv_obj_t * obj)
         return 1;
 }
 
+void lv_cus_focus_now(lv_obj_t *obj, lv_cus_item_t * item)
+{
+    lv_obj_t *child = lv_obj_get_child(obj, item->id);
+    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
+}
+
+void lv_cus_focus_next(lv_obj_t *obj, lv_cus_item_t * item)
+{
+    int8_t id_pre = item->id;
+    lv_obj_t *child = lv_obj_get_child(obj, lv_cus_to_next(item));
+    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
+    lv_obj_t *last_child = lv_obj_get_child(obj, id_pre);
+    lv_event_send(last_child, LV_EVENT_DEFOCUSED, NULL);
+}
+
+void lv_cus_focus_prev(lv_obj_t *obj, lv_cus_item_t * item)
+{
+    int8_t id_pre = item->id;
+    lv_obj_t *child = lv_obj_get_child(obj, lv_cus_to_prev(item));
+    lv_event_send(child, LV_EVENT_FOCUSED, NULL);
+    lv_obj_t *last_child = lv_obj_get_child(obj, id_pre);
+    lv_event_send(last_child, LV_EVENT_DEFOCUSED, NULL);
+}
+
+void lv_cus_focus_none(lv_obj_t *obj, lv_cus_item_t * item)
+{
+    int8_t id_pre = item->id;
+    lv_obj_t *child = lv_obj_get_child(obj, id_pre);
+    lv_event_send(child, LV_EVENT_DEFOCUSED, NULL);
+}
+
 int8_t lv_cus_to_next(lv_cus_item_t * item)
 {
+    item->id_last = item->id;
     item->id++;
     if (item->id > item->id_max)
         item->id = item->id_min; // usually 0
@@ -140,6 +172,7 @@ int8_t lv_cus_to_next(lv_cus_item_t * item)
 
 int8_t lv_cus_to_prev(lv_cus_item_t * item)
 {
+    item->id_next = item->id;
     item->id--;
     if (item->id < item->id_min)
         item->id = item->id_max;
@@ -147,10 +180,36 @@ int8_t lv_cus_to_prev(lv_cus_item_t * item)
     return item->id;
 }
 
-void lv_cus_disp_time(lv_obj_t * obj, lv_cus_time_t * time, uint32_t time_ms)
+void lv_set_time(lv_obj_t * obj, uint16_t time)
 {
-    time->time_ms = time_ms;
+//    lv_obj_set_style_opa(obj, opa, LV_STATE_DEFAULT);
+    if (time <= 1)
+        lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+}
+
+//void lv_cus_anime_move(lv)
+void lv_cus_disp_time(lv_obj_t * obj, uint32_t time_ms)
+{
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, obj);
+    lv_anim_set_time(&a, 1200);
+    lv_anim_set_values(&a, 240, 0);
+    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_set_time);
+    lv_anim_start(&a);
     lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN);
+}
+
+void lv_cus_set_x(lv_obj_t *obj, uint16_t x)
+{
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, obj);
+    lv_anim_set_time(&a, 300);
+    lv_anim_set_path_cb(&a, lv_anim_path_overshoot);
+    lv_anim_set_values(&a, lv_obj_get_x(obj), x);
+    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_obj_set_x);
+    lv_anim_start(&a);
 }
 
 void custom_init(lv_ui *ui)

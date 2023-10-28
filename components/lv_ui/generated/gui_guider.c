@@ -25,13 +25,12 @@ void init_scr_del_flag(lv_ui *ui)
   
 	ui->screen_main_del = true;
 	ui->screen_setting_del = true;
+	ui->screen_image_del = true;
 }
 
 void setup_ui(lv_ui *ui)
 {
   init_scr_del_flag(ui);
   setup_scr_screen_main(ui);
-    setup_scr_screen_setting(ui);
-//  lv_scr_load(ui->screen_main);
-    lv_scr_load(ui->screen_main);
+  lv_scr_load(ui->screen_main);
 }

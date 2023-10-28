@@ -117,7 +117,7 @@ void setup_scr_screen_main(lv_ui *ui)
 
 	//Write codes screen_main_cont_time
 	ui->screen_main_cont_time = lv_obj_create(ui->screen_main_cont_timer);
-	lv_obj_set_pos(ui->screen_main_cont_time, -20, -1);
+	lv_obj_set_pos(ui->screen_main_cont_time, -20, 9);
 	lv_obj_set_size(ui->screen_main_cont_time, 200, 40);
 	lv_obj_set_scrollbar_mode(ui->screen_main_cont_time, LV_SCROLLBAR_MODE_OFF);
 
@@ -270,27 +270,27 @@ void setup_scr_screen_main(lv_ui *ui)
 	lv_style_set_radius(&style_screen_main_list_weatehr_extra_texts_main_default, 3);
 	lv_style_set_bg_opa(&style_screen_main_list_weatehr_extra_texts_main_default, 0);
 
-	//Write codes screen_main_label_2
-	ui->screen_main_label_2 = lv_label_create(ui->screen_main_cont_weather);
-	lv_label_set_text(ui->screen_main_label_2, "刮风");
-	lv_label_set_long_mode(ui->screen_main_label_2, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_main_label_2, -4, 25);
-	lv_obj_set_size(ui->screen_main_label_2, 60, 24);
+	//Write codes screen_main_label_weather
+	ui->screen_main_label_weather = lv_label_create(ui->screen_main_cont_weather);
+	lv_label_set_text(ui->screen_main_label_weather, "刮风");
+	lv_label_set_long_mode(ui->screen_main_label_weather, LV_LABEL_LONG_WRAP);
+	lv_obj_set_pos(ui->screen_main_label_weather, -4, 25);
+	lv_obj_set_size(ui->screen_main_label_weather, 60, 24);
 
-	//Write style for screen_main_label_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_border_width(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_main_label_2, lv_color_hex(0x480a92), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_main_label_2, &lv_font_simsun_24, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_letter_space(ui->screen_main_label_2, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_line_space(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_main_label_2, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_opa(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_top(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_right(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_bottom(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_left(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_main_label_2, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	//Write style for screen_main_label_weather, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_border_width(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_main_label_weather, lv_color_hex(0x480a92), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_main_label_weather, &lv_font_simsun_24, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_letter_space(ui->screen_main_label_weather, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_line_space(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_main_label_weather, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_opa(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_top(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_right(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_bottom(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_left(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_main_label_weather, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_main_chart_temp
 	ui->screen_main_chart_temp = lv_chart_create(ui->screen_main_cont_weather);
@@ -346,27 +346,27 @@ void setup_scr_screen_main(lv_ui *ui)
 	lv_obj_set_style_pad_left(ui->screen_main_label_3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_main_label_3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_main_label_4
-	ui->screen_main_label_4 = lv_label_create(ui->screen_main_cont_weather);
-	lv_label_set_text(ui->screen_main_label_4, "12");
-	lv_label_set_long_mode(ui->screen_main_label_4, LV_LABEL_LONG_WRAP);
-	lv_obj_set_pos(ui->screen_main_label_4, 14, 105);
-	lv_obj_set_size(ui->screen_main_label_4, 18, 15);
+	//Write codes screen_main_label_temp_low
+	ui->screen_main_label_temp_low = lv_label_create(ui->screen_main_cont_weather);
+	lv_label_set_text(ui->screen_main_label_temp_low, "12");
+	lv_label_set_long_mode(ui->screen_main_label_temp_low, LV_LABEL_LONG_WRAP);
+	lv_obj_set_pos(ui->screen_main_label_temp_low, 14, 105);
+	lv_obj_set_size(ui->screen_main_label_temp_low, 18, 15);
 
-	//Write style for screen_main_label_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_border_width(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_radius(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_color(ui->screen_main_label_4, lv_color_hex(0x626262), LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_font(ui->screen_main_label_4, &lv_font_Abel_regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_letter_space(ui->screen_main_label_4, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_line_space(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_text_align(ui->screen_main_label_4, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_bg_opa(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_top(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_right(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_bottom(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_pad_left(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_style_shadow_width(ui->screen_main_label_4, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	//Write style for screen_main_label_temp_low, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_border_width(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_main_label_temp_low, lv_color_hex(0x626262), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_main_label_temp_low, &lv_font_Abel_regular_12, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_letter_space(ui->screen_main_label_temp_low, 2, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_line_space(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_main_label_temp_low, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_opa(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_top(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_right(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_bottom(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_pad_left(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_main_label_temp_low, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_main_label_temp_high
 	ui->screen_main_label_temp_high = lv_label_create(ui->screen_main_cont_weather);
@@ -389,6 +389,18 @@ void setup_scr_screen_main(lv_ui *ui)
 	lv_obj_set_style_pad_bottom(ui->screen_main_label_temp_high, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_pad_left(ui->screen_main_label_temp_high, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_shadow_width(ui->screen_main_label_temp_high, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+	//Write codes screen_main_img_wifi
+	ui->screen_main_img_wifi = lv_img_create(ui->screen_main_cont_weather);
+	lv_obj_add_flag(ui->screen_main_img_wifi, LV_OBJ_FLAG_CLICKABLE);
+	lv_img_set_src(ui->screen_main_img_wifi, &_wifi1_alpha_20x20);
+	lv_img_set_pivot(ui->screen_main_img_wifi, 20,20);
+	lv_img_set_angle(ui->screen_main_img_wifi, 0);
+	lv_obj_set_pos(ui->screen_main_img_wifi, 7, 0);
+	lv_obj_set_size(ui->screen_main_img_wifi, 20, 20);
+
+	//Write style for screen_main_img_wifi, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_img_opa(ui->screen_main_img_wifi, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 
 	//Write codes screen_main_label_nichijou
 	ui->screen_main_label_nichijou = lv_label_create(ui->screen_main);
@@ -648,26 +660,12 @@ void setup_scr_screen_main(lv_ui *ui)
 	lv_obj_set_style_text_font(ui->screen_main_btn_app1, &lv_font_montserratMedium_16, LV_PART_MAIN|LV_STATE_DEFAULT);
 	lv_obj_set_style_text_align(ui->screen_main_btn_app1, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
 
-	//Write codes screen_main_img_menu1
-	ui->screen_main_img_menu1 = lv_img_create(ui->screen_main);
-	lv_obj_add_flag(ui->screen_main_img_menu1, LV_OBJ_FLAG_CLICKABLE);
-	lv_img_set_src(ui->screen_main_img_menu1, &_menu_alpha_20x20);
-	lv_img_set_pivot(ui->screen_main_img_menu1, 50,50);
-	lv_img_set_angle(ui->screen_main_img_menu1, 0);
-	lv_obj_set_pos(ui->screen_main_img_menu1, 300, 117);
-	lv_obj_set_size(ui->screen_main_img_menu1, 20, 20);
-	lv_obj_add_flag(ui->screen_main_img_menu1, LV_OBJ_FLAG_CLICKABLE);
-
-	//Write style for screen_main_img_menu1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-	lv_obj_set_style_img_opa(ui->screen_main_img_menu1, 93, LV_PART_MAIN|LV_STATE_DEFAULT);
-
 	//Write codes screen_main_list_musics
 	ui->screen_main_list_musics = lv_list_create(ui->screen_main);
 	ui->screen_main_list_musics_item0 =lv_list_add_text(ui->screen_main_list_musics, "Musics");
 	lv_obj_set_pos(ui->screen_main_list_musics, 247, 25);
 	lv_obj_set_size(ui->screen_main_list_musics, 73, 182);
 	lv_obj_set_scrollbar_mode(ui->screen_main_list_musics, LV_SCROLLBAR_MODE_OFF);
-	lv_obj_add_flag(ui->screen_main_list_musics, LV_OBJ_FLAG_HIDDEN);
 
 	//Write style state: LV_STATE_DEFAULT for &style_screen_main_list_musics_main_main_default
 	static lv_style_t style_screen_main_list_musics_main_main_default;
@@ -730,7 +728,7 @@ void setup_scr_screen_main(lv_ui *ui)
 
 	//Write codes screen_main_cont_app
 	ui->screen_main_cont_app = lv_obj_create(ui->screen_main);
-	lv_obj_set_pos(ui->screen_main_cont_app, 5, 205);
+	lv_obj_set_pos(ui->screen_main_cont_app, 0, 205);
 	lv_obj_set_size(ui->screen_main_cont_app, 320, 35);
 	lv_obj_set_scrollbar_mode(ui->screen_main_cont_app, LV_SCROLLBAR_MODE_OFF);
 
