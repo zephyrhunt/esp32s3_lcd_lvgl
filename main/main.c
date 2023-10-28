@@ -143,8 +143,9 @@ void NETTask(void *par)
             }
         }
 
-        if (sys_status.is_wifi_connected) {
-//             WEATHER_HttpGet();
+        if (sys_status.time_update) {
+             WEATHER_HttpGet();
+             sys_status.weather_update = 1;
         }
 //        if (sys_status.wait_weather_update) {
 //            uint8_t is_update = WEATHER_HttpGet();
@@ -403,12 +404,9 @@ void KeyTask(void * par)
     KEYC_Init();
     while (1) {
         xSemaphoreTake(lv_semp, portMAX_DELAY);
-        static TickType_t run_times = 0;
-        run_times = xTaskGetTickCount();
         KEYC_TickInc();
         xSemaphoreGive(lv_semp);
         vTaskDelay(pdMS_TO_TICKS(10));
-//        vTaskDelayUntil(&run_times, pdMS_TO_TICKS(10));
     }
 }
 
@@ -545,7 +543,7 @@ void LVHandlerTask(void *pa)
         }
 
         if (sys_status.weather_update == 1) {
-
+//            lv_label_set_text(guider_ui.screen_main_label_weather, weather_info.weather);
         }
 
         run_times++;

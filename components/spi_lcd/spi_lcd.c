@@ -96,7 +96,7 @@ void LCD_HALInit()
         .sclk_io_num=PIN_NUM_CLK,
         .quadwp_io_num=-1,
         .quadhd_io_num=-1,
-        .max_transfer_sz=253700
+        .max_transfer_sz=203700
     };
     spi_device_interface_config_t devcfg={
 #ifdef CONFIG_LCD_OVERCLOCK
