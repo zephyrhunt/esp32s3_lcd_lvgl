@@ -42,17 +42,20 @@ typedef struct {
   uint8_t wait_wifi_list_update;
     uint8_t wait_time_update;
     uint8_t time_update;
+    uint8_t day_update;
 
     uint8_t wait_weather_update; // 2h更新一次
     uint8_t weather_update; // 2h更新一次
 }sys_status_t;
 
+extern uint8_t wifi_connect_status;
 sys_status_t sys_status = {
   .is_wifi_connected = 0,
   .is_wifi_scaining = 0,
   .wait_wifi_list_update = 0,
   .wait_time_update = 0,
   .time_update = 0,
+    .day_update = 0,
     .wait_weather_update = 0,
     .weather_update = 0,
 };
@@ -134,19 +137,29 @@ extern lv_obj_t * cont;
 void NETTask(void *par)
 {
     WEATHER_HttpInit();
+    static uint32_t run_times = 0;
     while (1) {
-        if (sys_status.wait_time_update) {
+
+        if (sys_status.wait_time_update && sys_status.is_wifi_connected) {
             uint8_t is_update = SNTP_TimeUpdate();
             if (is_update) {
                 sys_status.wait_time_update = 0;
-                sys_status.time_update = 1;
+                sys_status.time_update = 1; //表示开机后已经更新时间
+                run_times = 0;
+                lv_obj_t * item = lv_obj_get_child(guider_ui.screen_setting_list_wifi, lv_cus_wifi_item.id);
+                lv_obj_set_style_bg_color(item, lv_color_hex(0x00ff00), LV_PART_MAIN|LV_STATE_FOCUSED);
             }
         }
 
-        if (sys_status.time_update) {
-             WEATHER_HttpGet();
-             sys_status.weather_update = 1;
+        if (sys_status.time_update && sys_status.is_wifi_connected) {
+            if (run_times % 100 == 0) {
+                WEATHER_HttpGet(); //1分钟20次
+                sys_status.weather_update = 1;
+            }
         }
+
+        run_times++;
+        sys_status.is_wifi_connected = wifi_connect_status;
 //        if (sys_status.wait_weather_update) {
 //            uint8_t is_update = WEATHER_HttpGet();
 //            if (is_update) {
@@ -154,7 +167,6 @@ void NETTask(void *par)
 //                sys_status.weather_update = 1;
 //            }
 //        }
-
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -280,15 +292,15 @@ void KEY_DownHandler(KEY_Event event)
                                     err = esp_wifi_connect();
                                     // 尝试连接
                                     if (err == ESP_OK) {
-                                        ESP_LOGI(TAG, "wifi connect success");
-                                        sys_status.is_wifi_connected = 1;
+//                                        ESP_LOGI(TAG, "wifi connect success");
+//                                        sys_status.is_wifi_connected = 1;
                                         lv_obj_t * item = lv_obj_get_child(guider_ui.screen_setting_list_wifi, lv_cus_wifi_item.id);
                                         lv_obj_set_style_bg_color(item, lv_color_hex(0xffff00), LV_PART_MAIN|LV_STATE_FOCUSED);
                                         lv_cus_wifi_item.is_child_focus = 0;
                                         sys_status.wait_time_update = 1;
                                     } else {
                                         ESP_LOGI(TAG, "wifi connect failed");
-                                        sys_status.is_wifi_connected = 0;
+//                                        sys_status.is_wifi_connected = 0;
                                         sys_status.wait_time_update = 0;
                                     }
                                 }
@@ -501,7 +513,7 @@ void LVHandlerTask(void *pa)
     static uint32_t run_times = 0; // 40ms左右
     while (1) {
         xSemaphoreTake(lv_semp, portMAX_DELAY);
-        char buf[20];
+        char buf[30];
         if (sys_status.is_wifi_connected) {
 
         }
@@ -524,29 +536,51 @@ void LVHandlerTask(void *pa)
             i++;
         }
 
-        if (sys_status.time_update == 1) {
+        if (sys_status.time_update == 1 && sys_status.day_update == 0) {
             time(&now);
             localtime_r(&now, &timeinfo);
 //            printf("day:%d,hour:%d,min:%d,sec:%d,Mon:%d,week:%d\n", timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, timeinfo.tm_mon, timeinfo.tm_wday);
             sprintf(buf, "%2d", timeinfo.tm_hour);
-            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 0), buf); // spend lot time
             sprintf(buf, "%02d", timeinfo.tm_min);
             lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 2), buf);
             sprintf(buf, "%02d", timeinfo.tm_sec);
             lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 4), buf);
+
+            if (run_times % 1000 == 0) {
+                sys_status.day_update = 1;
+                vTaskDelay(pdMS_TO_TICKS(20));
+            }
 
             if (timeinfo.tm_sec % 2) {
                 lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), ":");
             } else {
                 lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_time, 3), " ");
             }
+            run_times++;
+        }
+
+        if (sys_status.day_update == 1) {
+            sys_status.day_update = 0;
+//            run_times = 0;
+            uint16_t year = timeinfo.tm_year+1900;
+            sprintf(buf, "%4d年", year);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 0), buf);
+            sprintf(buf, "星期%d", timeinfo.tm_wday);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 2), buf);
+            uint16_t mon = timeinfo.tm_mon+1;
+            sprintf(buf, "%2d月%2d日", mon, timeinfo.tm_mday);
+            lv_span_set_text(lv_spangroup_get_child(guider_ui.screen_main_text_day, 3), buf);
         }
 
         if (sys_status.weather_update == 1) {
-//            lv_label_set_text(guider_ui.screen_main_label_weather, weather_info.weather);
+            lv_label_set_text(guider_ui.screen_main_label_weather, weather_info.day_weather);
+            lv_chart_series_t * screen_main_chart_temp_0 = lv_chart_get_series_next(guider_ui.screen_main_chart_temp, NULL);
+            lv_chart_set_next_value(guider_ui.screen_main_chart_temp, screen_main_chart_temp_0, weather_info.temp_low);
+            lv_chart_set_next_value(guider_ui.screen_main_chart_temp, screen_main_chart_temp_0, weather_info.temp_high);
+            sys_status.weather_update = 0;
         }
 
-        run_times++;
         lv_timer_handler();
         xSemaphoreGive(lv_semp);
         vTaskDelay(pdMS_TO_TICKS(20));

@@ -9,6 +9,43 @@
 
 
 WeatherInfo_t weather_info;
+
+/**
+ * @brief 心知天气（seniverse） 天气各项数据结构体
+ */
+typedef struct{
+	char *date;
+	char *text_day;
+	char *code_day;
+	char *text_night;
+	char *code_night;
+	char *high;
+	char *low;
+	char *rainfall;
+	char *precip;
+	char *wind_direction;
+	char *wind_direction_degree;
+	char *wind_speed;
+	char *wind_scale;
+	char *humidity;
+
+} user_seniverse_day_config_t;
+
+/**
+ * @brief 心知天气（seniverse） 数据结构体
+ */
+typedef struct {
+	char *id;
+	char *name;
+	char *country;
+	char *path;
+	char *timezone;
+	char *timezone_offset;
+    user_seniverse_day_config_t day_config[3];/*这里的3是指心知天气URL中的 days=3*/
+	char *last_update;
+
+} user_seniverse_config_t;
+
 /**
  * @brief 解析天气数据（JSON）
  *
@@ -17,47 +54,94 @@ WeatherInfo_t weather_info;
  * @return false 解析失败
  */
 static bool parse_json_data(const char *analysis_buf) {
-    cJSON *json_data = NULL;
-    /* 截取有效json */
-    char *index = strchr(analysis_buf, '{');
-    // strcpy(weather_buf, index);
+    uint8_t i,j;
+	uint8_t result_array_size = 0;
+//	uint8_t daily_array_size = 0;
 
-    json_data = cJSON_Parse(index);
-    if (json_data == NULL) // 判断字段是否json格式
+	cJSON *item = NULL;
+	cJSON *root = NULL;
+	cJSON *results_root = NULL;
+	cJSON *daily_root = NULL;
+	user_seniverse_config_t user_sen_config = {}; //会自动释放
+    /* print the version */
+	root = cJSON_Parse(analysis_buf);   /*json_data 为心知天气的原始数据*/
+    if (!root)
     {
-        return false;
+      printf("Error before: [%s]\n",cJSON_GetErrorPtr());
+	  return  0;
+	}
+    printf("%s\n\n", cJSON_Print(root));   /*将完整的数据以JSON格式打印出来*/
+	cJSON *Presult = cJSON_GetObjectItem(root, "results");  /*results 的键值对为数组，*/
+
+	result_array_size = cJSON_GetArraySize(Presult);  /*求results键值对数组中有多少个元素, 只有一个*/
+    for(i = 0;i < result_array_size;i++)
+    {
+		cJSON *item_results = cJSON_GetArrayItem(Presult, i);
+
+        char *sresults = cJSON_PrintUnformatted(item_results);
+		results_root = cJSON_Parse(sresults);
+		if (!results_root)
+	    {
+	      printf("Error before: [%s]\n",cJSON_GetErrorPtr());
+		  return  0;
+		}
+		cJSON *Plocation = cJSON_GetObjectItem(results_root, "location");
+
+	    item = cJSON_GetObjectItem(Plocation, "id");
+		user_sen_config.id = cJSON_Print(item);
+	    item = cJSON_GetObjectItem(Plocation, "name");
+		user_sen_config.name = cJSON_Print(item);
+	    item = cJSON_GetObjectItem(Plocation, "country");
+        user_sen_config.country = cJSON_Print(item);
+	    item = cJSON_GetObjectItem(Plocation, "path");
+        user_sen_config.path = cJSON_Print(item);
+	    item = cJSON_GetObjectItem(Plocation, "timezone");
+		user_sen_config.timezone = cJSON_Print(item);
+		item = cJSON_GetObjectItem(Plocation, "timezone_offset");
+		user_sen_config.timezone_offset = cJSON_Print(item);
+		cJSON *Pdaily = cJSON_GetObjectItem(results_root, "daily");
+//		daily_array_size = cJSON_GetArraySize(Pdaily); // 3天，只要第一天
+//        for(j = 0;j < daily_array_size;j++)
+//        {
+			cJSON *item_daily = cJSON_GetArrayItem(Pdaily, 0);
+			char *sdaily = cJSON_PrintUnformatted(item_daily);
+			daily_root = cJSON_Parse(sdaily);
+			if (!daily_root)
+		    {
+		      printf("Error before: [%s]\n",cJSON_GetErrorPtr());
+			  return  0;
+			}
+		    item = cJSON_GetObjectItem(daily_root, "date");
+            strcpy(weather_info.date, item->valuestring);
+		    item = cJSON_GetObjectItem(daily_root, "text_day");
+            strcpy(weather_info.day_weather, item->valuestring);
+		    item = cJSON_GetObjectItem(daily_root, "code_day");
+            weather_info.day_code = atoi(item->valuestring);
+            printf("day code:%d\n", weather_info.day_code);
+			item = cJSON_GetObjectItem(daily_root, "text_night");
+            strcpy(weather_info.night_weather, item->valuestring);
+			item = cJSON_GetObjectItem(daily_root, "code_night");
+            weather_info.night_code = atoi(item->valuestring);
+            printf("night code:%d\n", weather_info.night_code);
+
+			item = cJSON_GetObjectItem(daily_root, "high");
+            weather_info.temp_high = atoi(item->valuestring);
+			item = cJSON_GetObjectItem(daily_root, "low");
+            weather_info.temp_low = atoi(item->valuestring);
+            // back
+			item = cJSON_GetObjectItem(daily_root, "wind_speed");
+			item = cJSON_GetObjectItem(daily_root, "wind_scale");
+			item = cJSON_GetObjectItem(daily_root, "humidity");
+            //
+			cJSON_Delete(daily_root);/*每次调用cJSON_Parse函数后，都要释放内存*/
+//        }
+	/*-------------------------------------------------------------------*/
+		item = cJSON_GetObjectItem(results_root, "last_update");
+		user_sen_config.last_update = cJSON_Print(item);
+		cJSON_Delete(results_root);  /*每次调用cJSON_Parse函数后，都要释放内存*/
     }
-
-    // ESP_LOGI(TAG, "Start parsing data");
-    cJSON *cjson_item = cJSON_GetObjectItem(json_data, "results");
-    cJSON *cjson_results = cJSON_GetArrayItem(cjson_item, 0);
-
-    /* 获取天气的地址 */
-    cJSON *cjson_location = cJSON_GetObjectItem(cjson_results, "location");
-    cJSON *cjson_temperature_name = cJSON_GetObjectItem(cjson_location, "name");
-//    strcpy(user_weather_info.location_name,cjson_temperature_name->valuestring);
-
-    /* 天气信息 */
-    cJSON *cjson_daily = cJSON_GetObjectItem(cjson_results, "daily");
-
-    /* 当天的天气信息 */
-    cJSON *cjson_daily_1 = cJSON_GetArrayItem(cjson_daily, 0);
-
-//    ESP_LOGI(TAG, "day_one_code is: %s", cJSON_GetObjectItem(cjson_daily_1, "code_day")->valuestring);
-//    ESP_LOGI(TAG, "day_one_temp_high is: %s", cJSON_GetObjectItem(cjson_daily_1, "high")->valuestring);
-//    ESP_LOGI(TAG, "day_three_temp_low is: %s", cJSON_GetObjectItem(cjson_daily_1, "low")->valuestring);
-    ESP_LOGI(TAG, "day_one_humi is: %s", cJSON_GetObjectItem(cjson_daily_1, "humidity")->valuestring);
-//    ESP_LOGI(TAG, "day_one_windspeed is: %s", cJSON_GetObjectItem(cjson_daily_1, "wind_speed")->valuestring);
-//    ESP_LOGI(TAG, "day_one_date is: %s", cJSON_GetObjectItem(cjson_daily_1, "date")->valuestring);
-//    ESP_LOGI(TAG, "day_one_weather is: %s", cJSON_GetObjectItem(cjson_daily_1, "text_day")->valuestring);
-//    ESP_LOGI(TAG, "day_one_name is: %s", cJSON_GetObjectItem(cjson_location, "name")->valuestring);
-
-//    strcpy(weather_info.date, cJSON_GetObjectItem(cjson_daily_1, "date")->valuestring);
-//    strcpy(weather_info.weather, cJSON_GetObjectItem(cjson_daily_1, "text_day")->valuestring);
-//    strcpy(weather_info.temp_high, cJSON_GetObjectItem(cjson_daily_1, "high")->valuestring);
-//    strcpy(weather_info.temp_low, cJSON_GetObjectItem(cjson_daily_1, "low")->valuestring);
-
-    return 1;
+	cJSON_Delete(root);/*每次调用cJSON_Parse函数后，都要释放内存*/
+	return  0;
 }
 esp_http_client_handle_t  client;
 void WEATHER_HttpInit()
@@ -76,16 +160,16 @@ char output_buffer[1224] = {0};
 uint8_t WEATHER_HttpGet()
 {
     esp_http_client_open(client, 0);
-    int64_t content_length = esp_http_client_fetch_headers(client);
+    int content_length = esp_http_client_fetch_headers(client);
     if (content_length < 0) {
         ESP_LOGE(TAG, "Fetch Failed\n");
         return 0;
     } else {
-        ESP_LOGI(TAG, "Got Content Length: %lld\n", content_length);
+        ESP_LOGI(TAG, "Got Content Length: %d\n", content_length);
     }
     esp_http_client_read(client, output_buffer, content_length);
-    ESP_LOGI(TAG, "Read content: %s, %lld\n", output_buffer, content_length);
-//    parse_json_data(output_buffer);
+    ESP_LOGI(TAG, "Read content: %s, %d\n", output_buffer, content_length);
+    parse_json_data(output_buffer);
     esp_http_client_close(client);
     return 1;
 }
